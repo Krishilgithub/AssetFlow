@@ -17,11 +17,16 @@ export async function GET() {
         name: true,
         description: true,
         created_at: true,
+        _count: {
+          select: {
+            assets: { where: { is_deleted: false } }
+          }
+        }
       },
       orderBy: { created_at: 'desc' }
     });
 
-    return NextResponse.json(categories);
+    return NextResponse.json(categories.map(c => ({ ...c, assetsCount: c._count.assets })));
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

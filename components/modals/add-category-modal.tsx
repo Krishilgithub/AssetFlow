@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-// @ts-ignore
-import { Folder01Icon, Tag01Icon } from "hugeicons-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 interface AddCategoryModalProps {
@@ -38,8 +36,8 @@ export function AddCategoryModal({ isOpen, onClose, onSuccess }: AddCategoryModa
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden bg-white border-neutral-200">
         <div className="p-6 pb-4 border-b border-neutral-100">
-          <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mb-4 border border-neutral-200">
-            <Folder01Icon size={20} className="text-neutral-700" />
+          <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mb-4 border border-neutral-200 text-neutral-700 text-sm font-bold">
+            🗂
           </div>
           <DialogTitle className="text-lg font-bold text-neutral-900 tracking-tight">Create Asset Category</DialogTitle>
           <DialogDescription className="text-sm text-neutral-500 mt-1.5 font-medium">
@@ -48,9 +46,8 @@ export function AddCategoryModal({ isOpen, onClose, onSuccess }: AddCategoryModa
         </div>
         <div className="p-6 space-y-5">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag01Icon size={14} className="text-neutral-400" /> Category Name
-            </label>
+            <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+              Category Name</label>
             <input
               type="text"
               placeholder="e.g. IT Hardware, Mobile Devices"

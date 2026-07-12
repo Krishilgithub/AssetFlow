@@ -392,6 +392,8 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState("Overview");
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
+  const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
 
   const { data: activitiesData } = useDashboardActivities();
   const activityLogs = activitiesData || [];
@@ -750,10 +752,10 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Perform common administrator operations shortcuts</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => { setActiveTab("Departments"); triggerToast("Department form opened", "success"); }} className="px-4 py-2 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all flex items-center gap-2">
+          <button onClick={() => setIsAddDepartmentModalOpen(true)} className="px-4 py-2 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all flex items-center gap-2">
             Add Department
           </button>
-          <button onClick={() => { setActiveTab("Employees"); triggerToast("Employee form opened", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
+          <button onClick={() => setIsAddEmployeeModalOpen(true)} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
             Add Employee
           </button>
           <button onClick={() => { setIsAddCategoryModalOpen(true); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
@@ -1004,11 +1006,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Department Management</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Configure corporate branches, cost centers, and checkout privileges</p>
         </div>
-        <AddDepartmentModal>
-          <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
-            Add Department
-          </button>
-        </AddDepartmentModal>
+        <button onClick={() => setIsAddDepartmentModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+          Add Department
+        </button>
       </div>
 
       {/* Filters & Search */}
@@ -1114,17 +1114,15 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         />
         <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
           <option value="All">All Departments</option>
-          <option value="Engineering">Engineering</option>
-          <option value="IT Operations">IT Operations</option>
-          <option value="Operations">Operations</option>
-          <option value="Human Resources">Human Resources</option>
-          <option value="Finance">Finance</option>
+          {departments.map((dept: any) => (
+            <option key={dept.id} value={dept.name}>{dept.name}</option>
+          ))}
         </select>
         <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
           <option value="All">All Roles</option>
-          <option value="Asset Manager">Asset Manager</option>
-          <option value="Department Head">Department Head</option>
-          <option value="Employee">Employee</option>
+          {Array.from(new Set(employees.map((e: any) => e.role))).map((role: any) => (
+            <option key={role} value={role}>{role}</option>
+          ))}
         </select>
       </div>
 
@@ -1282,11 +1280,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Recent Registrations Ledger</h3>
             <p className="text-xs text-neutral-400 mt-0.5 font-medium">Chronological checklist of physical and software logs added to the database</p>
           </div>
-          <AddAssetModal>
-            <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
-              Add Asset
-            </button>
-          </AddAssetModal>
+          <button onClick={() => setIsAddAssetModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+            Add Asset
+          </button>
         </div>
         <div className="mt-2">
           <Table>
@@ -1967,7 +1963,10 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         {renderDetailDrawer()}
         {renderToast()}
         {renderConfirmModal()}
-        <AddEmployeeModal isOpen={isAddEmployeeModalOpen} onClose={() => setIsAddEmployeeModalOpen(false)} />
+        <AddEmployeeModal isOpen={isAddEmployeeModalOpen} onClose={() => setIsAddEmployeeModalOpen(false)} onSuccess={() => triggerToast("Employee added successfully", "success")} />
+        <AddDepartmentModal isOpen={isAddDepartmentModalOpen} onClose={() => setIsAddDepartmentModalOpen(false)} onSuccess={() => triggerToast("Department created successfully", "success")} />
+        <AddAssetModal isOpen={isAddAssetModalOpen} onClose={() => setIsAddAssetModalOpen(false)} onSuccess={() => triggerToast("Asset registered successfully", "success")} />
+        <AddCategoryModal isOpen={isAddCategoryModalOpen} onClose={() => setIsAddCategoryModalOpen(false)} onSuccess={() => triggerToast("Category created successfully", "success")} />
       </div>
     </div>
   );
