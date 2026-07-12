@@ -18,7 +18,7 @@ export async function GET() {
       orderBy: { created_at: 'desc' }
     });
 
-    const formatted = assets.map(a => {
+    const formatted = assets.map((a: any) => {
       const activeAllocation = a.asset_allocations?.[0];
       const custodianName = activeAllocation 
         ? `${activeAllocation.users_asset_allocations_allocated_toTousers.first_name} ${activeAllocation.users_asset_allocations_allocated_toTousers.last_name}` 

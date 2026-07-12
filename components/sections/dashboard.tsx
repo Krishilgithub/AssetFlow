@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -279,43 +279,27 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const setEmployees: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
   // Mock State for Categories
-  const [categories, setCategories] = useState([
-    { id: "CAT-01", name: "IT Hardware", icon: Folder01Icon, assetsCount: 145, warrantyPeriod: "36 Months", customAttributes: ["Depreciation: 5 years", "Tag Required: Yes"] },
-    { id: "CAT-02", name: "AV Equipment", icon: Folder01Icon, assetsCount: 32, warrantyPeriod: "24 Months", customAttributes: ["Depreciation: 3 years", "Calibrated: Annual"] },
-    { id: "CAT-03", name: "Office Furniture", icon: Folder01Icon, assetsCount: 65, warrantyPeriod: "60 Months", customAttributes: ["Depreciation: 7 years", "Warranty Type: On-Site"] },
-    { id: "CAT-04", name: "Mobile Devices", icon: Folder01Icon, assetsCount: 48, warrantyPeriod: "24 Months", customAttributes: ["Depreciation: 2 years", "MDM Configured: Yes"] },
-    { id: "CAT-05", name: "Network Gear", icon: Folder01Icon, assetsCount: 22, warrantyPeriod: "36 Months", customAttributes: ["Depreciation: 5 years", "Location: Server Room"] },
-    { id: "CAT-06", name: "Software Licenses", icon: Folder01Icon, assetsCount: 12, warrantyPeriod: "12 Months", customAttributes: ["Type: Subscription", "Key Required: Yes"] },
-  ]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   // Mock State for Assets List
   const { data: assetsData } = useAssetsList();
   const assetsList = assetsData || [];
-  const setAssetsList: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
-  // Mock State for Audits List
-  const [auditsList, setAuditsList] = useState([
-    { id: "AUD-801", name: "Q1 IT Equipment Audit", department: "IT Operations", auditor: "Priya Shah", startDate: "Jul 15, 2026", status: "In Progress", progress: 75 },
-    { id: "AUD-802", name: "Annual Office Furniture Check", department: "Human Resources", auditor: "Darnell Cole", startDate: "Jul 20, 2026", status: "Scheduled", progress: 0 },
-    { id: "AUD-803", name: "Engineering Assets Audit", department: "Engineering", auditor: "Marcus Vance", startDate: "Jun 30, 2026", status: "Completed", progress: 100 },
-    { id: "AUD-804", name: "Finance Assets Registry Scan", department: "Finance", auditor: "Internal Auditor", startDate: "May 15, 2026", status: "Failed", progress: 90 },
-  ]);
+  const { data: allocationsData } = useAllocations();
+  const allocationsList = allocationsData || [];
+
+  const { data: transfersData } = useTransfers();
+  const transfersList = transfersData || [];
+
+  // Mock State for Audits
+  const { data: auditsData } = useAudits();
+  const auditsList = auditsData || [];
 
   // Mock State for Pending Approvals
-  const [pendingApprovals, setPendingApprovals] = useState([
-    { id: 1, type: "Audit Requests", title: "Emergency AV Gear Scan", requestedBy: "Sarah Jenkins", initials: "SJ", dept: "Marketing", details: "Request to audit 12 camera lenses and mics", status: "Pending" },
-    { id: 2, type: "Role Changes", title: "Promote Priya Shah to Admin", requestedBy: "Marcus Vance", initials: "MV", dept: "Engineering", details: "Grant administrative control over configurations", status: "Pending" },
-    { id: 3, type: "Department Requests", title: "Initialize Research Dept", requestedBy: "Aria Thorne", initials: "AT", dept: "Engineering", details: "Request to set up budget and check out list", status: "Pending" },
-  ]);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
 
   // Mock State for Notifications list
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "System", title: "Low Inventory Warning", description: "Standard company laptops inventory is below threshold of 5 units.", timestamp: "10m ago", priority: "High", read: false },
-    { id: 2, type: "Audit", title: "Audit Verification Overdue", description: "Q1 IT Equipment Audit requires physical barcode scan for 4 remaining server rack components.", timestamp: "1h ago", priority: "Medium", read: false },
-    { id: 3, type: "Employee", title: "Employee Role Assignment Updated", description: "Alex Dupont has been reassigned to operations asset checkout list.", timestamp: "2h ago", priority: "Low", read: false },
-    { id: 4, type: "Assets", title: "Warranty Expiring Soon", description: "iPad Pro (AST-0552) warranty expires in 14 days (Jul 26, 2026).", timestamp: "Yesterday", priority: "High", read: true },
-    { id: 5, type: "System", title: "Daily Cloud Backup Success", description: "Daily database copy stored in cloud cold ledger successfully.", timestamp: "2 days ago", priority: "Low", read: true },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Role-Based Access Control State
   const [rbacPermissions, setRbacPermissions] = useState<Record<string, Record<string, Record<string, boolean>>>>({
@@ -1229,7 +1213,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               <div className="flex flex-col gap-1 mt-1">
                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Attributes:</span>
                 <div className="flex flex-wrap gap-1 mt-0.5">
-                  {cat.customAttributes.map((attr, aIdx) => (
+                  {(cat.customAttributes || []).map((attr: any, aIdx: number) => (
                     <span key={aIdx} className="text-[9px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded font-medium">{attr}</span>
                   ))}
                 </div>

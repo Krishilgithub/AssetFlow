@@ -145,6 +145,29 @@ export function DeptHeadDashboard() {
     setTimeout(() => setToast(null), 3200);
   };
 
+  // ─── Department Overview State ─────────────────────────────────────────────
+  const [deptAssets, setDeptAssets] = useState<any[]>([]);
+
+  // ─── Department Employees State ─────────────────────────────────────────────
+  const [deptEmployees, setDeptEmployees] = useState<any[]>([]);
+  const employees: any[] = [];
+
+  // ─── Bookings State ─────────────────────────────────────────────
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingForm, setBookingForm] = useState({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
+
+  // ─── Transfer Requests ──────────────────────────────────────────────────
+  const [transferReqs, setTransferReqs] = useState<any[]>([]);
+
+  // ─── Maintenance ────────────────────────────────────────────────────────
+  const [maintenanceReqs, setMaintenanceReqs] = useState<any[]>([]);
+
+  // ─── Notifications ──────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // ─── Reports ────────────────────────────────────────────────────────────
+  const reports: any[] = [];
+
   // Confirm modal
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean; title: string; description: string; onConfirm: () => void;
@@ -159,71 +182,7 @@ export function DeptHeadDashboard() {
   const [notifTab, setNotifTab] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ─── Department Assets ──────────────────────────────────────────
-  const [deptAssets, setDeptAssets] = useState([
-    { id: "AST-0010", name: "MacBook Pro 16\" M3 Max",    allocatedTo: "Jordan Rivera",  category: "IT Hardware",    condition: "Good", status: "Allocated", warranty: "Active",   location: "Floor 2" },
-    { id: "AST-0114", name: "Dell UltraSharp 32\" 4K",   allocatedTo: "Marcus Vance",   category: "IT Hardware",    condition: "Good", status: "Allocated", warranty: "Active",   location: "Floor 2" },
-    { id: "AST-0200", name: "iPhone 15 Pro",              allocatedTo: "Lena Park",      category: "Mobile Devices", condition: "Good", status: "Allocated", warranty: "Active",   location: "Floor 3" },
-    { id: "AST-0311", name: "Lenovo ThinkPad X1",         allocatedTo: "Unassigned",     category: "IT Hardware",    condition: "Fair", status: "Available", warranty: "Expiring", location: "Storage" },
-    { id: "AST-0552", name: "iPad Pro 12.9\" M2",         allocatedTo: "Aria Thorne",    category: "Mobile Devices", condition: "Fair", status: "Allocated", warranty: "Expiring", location: "Floor 2" },
-    { id: "AST-0688", name: "Sony WH-1000XM5 Headset",   allocatedTo: "Dev Patel",      category: "Accessories",    condition: "Good", status: "Allocated", warranty: "Active",   location: "Floor 1" },
-    { id: "AST-0721", name: "HP LaserJet Pro",            allocatedTo: "Shared",         category: "Peripherals",    condition: "Good", status: "In Service",warranty: "Active",   location: "Floor 2" },
-    { id: "AST-0804", name: "Logitech MX Master 3",       allocatedTo: "Sam Torres",     category: "Accessories",    condition: "Good", status: "Allocated", warranty: "Active",   location: "Floor 1" },
-  ]);
-
-  // ─── Department Employees ───────────────────────────────────────
-  const employees = [
-    { id: "EMP-101", name: "Jordan Rivera",  role: "Senior Engineer",     assets: 2, maintenance: 1, bookings: 3, status: "Active", email: "j.rivera@co.com" },
-    { id: "EMP-102", name: "Marcus Vance",   role: "Engineer",            assets: 1, maintenance: 0, bookings: 1, status: "Active", email: "m.vance@co.com" },
-    { id: "EMP-103", name: "Lena Park",      role: "Lead Engineer",       assets: 3, maintenance: 0, bookings: 2, status: "Active", email: "l.park@co.com" },
-    { id: "EMP-104", name: "Aria Thorne",    role: "Junior Engineer",     assets: 1, maintenance: 1, bookings: 1, status: "Active", email: "a.thorne@co.com" },
-    { id: "EMP-105", name: "Dev Patel",      role: "Engineer",            assets: 1, maintenance: 0, bookings: 0, status: "Active", email: "d.patel@co.com" },
-    { id: "EMP-106", name: "Sam Torres",     role: "Senior Engineer",     assets: 2, maintenance: 0, bookings: 4, status: "Active", email: "s.torres@co.com" },
-    { id: "EMP-107", name: "Zara Okafor",    role: "Engineer",            assets: 0, maintenance: 0, bookings: 1, status: "On Leave", email: "z.okafor@co.com" },
-    { id: "EMP-108", name: "Chris Nguyen",   role: "Staff Engineer",      assets: 2, maintenance: 1, bookings: 2, status: "Active", email: "c.nguyen@co.com" },
-  ];
-
-  // ─── Bookings ──────────────────────────────────────────────────
-  const [bookings, setBookings] = useState([
-    { id: "BKG-001", resource: "Conference Room A", bookedBy: "Sarah Chen",    purpose: "Team Sprint Planning",   date: "Jul 14, 2026", start: "09:00", end: "11:00", status: "Upcoming" },
-    { id: "BKG-002", resource: "Lab Room B",        bookedBy: "Jordan Rivera", purpose: "Hardware Testing",       date: "Jul 15, 2026", start: "10:00", end: "13:00", status: "Upcoming" },
-    { id: "BKG-003", resource: "Sony 4K Projector", bookedBy: "Marcus Vance",  purpose: "Client Demo",            date: "Jul 8,  2026", start: "14:00", end: "16:00", status: "Completed" },
-    { id: "BKG-004", resource: "Conference Room B", bookedBy: "Lena Park",     purpose: "Architecture Review",    date: "Jul 9,  2026", start: "11:00", end: "12:30", status: "Completed" },
-  ]);
-  const [bookingForm, setBookingForm] = useState({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
-
-  // ─── Transfer Requests ──────────────────────────────────────────
-  const [transferReqs, setTransferReqs] = useState([
-    { id: "TRF-001", assetId: "AST-0114", assetName: "Dell UltraSharp 32\" 4K", requestedBy: "Marcus Vance",  transferTo: "Priya Shah",    dept: "IT Operations", date: "Jul 09, 2026", status: "Pending",   reason: "Project reassignment" },
-    { id: "TRF-002", assetId: "AST-0552", assetName: "iPad Pro 12.9\" M2",      requestedBy: "Aria Thorne",   transferTo: "Dev Patel",     dept: "Engineering",  date: "Jul 10, 2026", status: "Pending",   reason: "Role change" },
-    { id: "TRF-003", assetId: "AST-0688", assetName: "Sony WH-1000XM5",         requestedBy: "Dev Patel",     transferTo: "Sam Torres",    dept: "Engineering",  date: "Jul 05, 2026", status: "Approved",  reason: "Team relocation" },
-    { id: "TRF-004", assetId: "AST-0804", assetName: "Logitech MX Master 3",    requestedBy: "Sam Torres",    transferTo: "Zara Okafor",   dept: "Engineering",  date: "Jul 03, 2026", status: "Completed", reason: "Leave coverage" },
-  ]);
-
-  // ─── Maintenance ────────────────────────────────────────────────
-  const [maintenanceReqs, setMaintenanceReqs] = useState([
-    { id: "MNT-001", assetId: "AST-0552", assetName: "iPad Pro 12.9\" M2",       employee: "Aria Thorne",  issue: "Screen flickering intermittently",   issueType: "Hardware", priority: "High",   status: "In Progress", technician: "Dave Miller", createdOn: "Jul 10, 2026", cost: "$120" },
-    { id: "MNT-002", assetId: "AST-0010", assetName: "MacBook Pro 16\" M3 Max",  employee: "Jordan Rivera",issue: "Keyboard keys sticking",             issueType: "Hardware", priority: "Medium", status: "Pending",     technician: "Unassigned",  createdOn: "Jul 11, 2026", cost: "—" },
-    { id: "MNT-003", assetId: "AST-0311", assetName: "Lenovo ThinkPad X1",       employee: "Chris Nguyen", issue: "Battery drains rapidly",             issueType: "Hardware", priority: "Critical",status: "Pending",    technician: "Unassigned",  createdOn: "Jul 12, 2026", cost: "—" },
-    { id: "MNT-004", assetId: "AST-0721", assetName: "HP LaserJet Pro",          employee: "Sam Torres",   issue: "Paper jam error on large print jobs", issueType: "Mechanical",priority: "Low",   status: "Resolved",    technician: "Tech Team",   createdOn: "Jul 01, 2026", cost: "$45" },
-  ]);
-
-  // ─── Notifications ──────────────────────────────────────────────
-  const [notifications, setNotifications] = useState([
-    { id: 1, category: "Transfers",    priority: "High",   title: "Transfer Request Awaiting Approval",  description: "Marcus Vance has requested to transfer Dell UltraSharp Monitor to IT Operations.",   timestamp: "Jul 12, 2026 · 09:00 AM", read: false },
-    { id: 2, category: "Transfers",    priority: "Medium", title: "Transfer Request Awaiting Approval",  description: "Aria Thorne has requested to transfer iPad Pro to Dev Patel.",                       timestamp: "Jul 12, 2026 · 08:30 AM", read: false },
-    { id: 3, category: "Maintenance",  priority: "Critical",title: "Critical Maintenance Request",       description: "Chris Nguyen raised a Critical priority request for Lenovo ThinkPad X1 battery.",   timestamp: "Jul 12, 2026 · 08:15 AM", read: false },
-    { id: 4, category: "Bookings",     priority: "Low",    title: "Booking Reminder",                    description: "Team Sprint Planning in Conference Room A tomorrow at 09:00 AM.",                   timestamp: "Jul 11, 2026 · 06:00 PM", read: true  },
-    { id: 5, category: "Assets",       priority: "Medium", title: "Warranty Expiring",                   description: "Lenovo ThinkPad X1 (AST-0311) warranty is expiring soon. Take action.",            timestamp: "Jul 10, 2026 · 10:00 AM", read: true  },
-  ]);
-
-  // ─── Reports ─────────────────────────────────────────────────────
-  const reports = [
-    { name: "Department Asset Report Q2 2026", date: "Jul 01, 2026", by: "Sarah Chen", format: "PDF" },
-    { name: "Employee Asset Allocation Report", date: "Jun 28, 2026", by: "Sarah Chen", format: "Excel" },
-    { name: "Maintenance Summary — Jun 2026",   date: "Jun 25, 2026", by: "Sarah Chen", format: "CSV" },
-    { name: "Booking Utilization Report",        date: "Jun 20, 2026", by: "Sarah Chen", format: "PDF" },
-  ];
+  // End of state
 
   // ───────────────────────────────────────────────────────────────
   // GLOBAL OVERLAYS
@@ -692,7 +651,7 @@ export function DeptHeadDashboard() {
                   <TableCell className="py-4 text-xs font-semibold text-neutral-900">{asset.name}</TableCell>
                   <TableCell className="py-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 bg-neutral-200 text-neutral-600 rounded-full text-[8px] font-bold flex items-center justify-center">{asset.allocatedTo.split(" ").map(n => n[0]).join("").slice(0,2)}</div>
+                      <div className="w-5 h-5 bg-neutral-200 text-neutral-600 rounded-full text-[8px] font-bold flex items-center justify-center">{asset.allocatedTo.split(" ").map((n: any) => n[0]).join("").slice(0,2)}</div>
                       <span className="text-xs text-neutral-700 font-medium">{asset.allocatedTo}</span>
                     </div>
                   </TableCell>
@@ -756,7 +715,7 @@ export function DeptHeadDashboard() {
                   <TableRow key={emp.id} onClick={() => { setDrawerItem({ type: "employee", data: emp as unknown as Record<string, unknown> }); setDrawerTab("Profile"); setDrawerOpen(true); }} className="border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                     <TableCell className="py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 bg-neutral-950 text-white rounded-full font-bold text-[9px] flex items-center justify-center">{emp.name.split(" ").map(n => n[0]).join("")}</div>
+                        <div className="w-7 h-7 bg-neutral-950 text-white rounded-full font-bold text-[9px] flex items-center justify-center">{emp.name.split(" ").map((n: any) => n[0]).join("")}</div>
                         <div>
                           <p className="font-bold text-neutral-900">{emp.name}</p>
                           <p className="text-[9px] text-neutral-400">{emp.id}</p>
@@ -924,7 +883,7 @@ export function DeptHeadDashboard() {
                     <td className="py-3 font-bold text-neutral-900 max-w-[140px] truncate">{req.assetName}</td>
                     <td className="py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-neutral-200 rounded-full text-[8px] font-bold flex items-center justify-center text-neutral-600">{req.requestedBy.split(" ").map(n => n[0]).join("")}</div>
+                        <div className="w-5 h-5 bg-neutral-200 rounded-full text-[8px] font-bold flex items-center justify-center text-neutral-600">{req.requestedBy.split(" ").map((n: any) => n[0]).join("")}</div>
                         <span className="font-medium text-neutral-700">{req.requestedBy}</span>
                       </div>
                     </td>
@@ -992,7 +951,7 @@ export function DeptHeadDashboard() {
                     <td className="py-3 font-bold text-neutral-900 max-w-[130px] truncate">{req.assetName}</td>
                     <td className="py-3">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 bg-neutral-200 rounded-full text-[8px] font-bold flex items-center justify-center text-neutral-600">{req.employee.split(" ").map(n => n[0]).join("")}</div>
+                        <div className="w-5 h-5 bg-neutral-200 rounded-full text-[8px] font-bold flex items-center justify-center text-neutral-600">{req.employee.split(" ").map((n: any) => n[0]).join("")}</div>
                         <span className="text-neutral-700 font-medium">{req.employee}</span>
                       </div>
                     </td>

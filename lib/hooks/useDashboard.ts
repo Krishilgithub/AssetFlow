@@ -81,3 +81,33 @@ export function useTransfers() {
     },
   });
 }
+
+export function useAudits() {
+  return useQuery<any[]>({
+    queryKey: ["audits"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/audits");
+      return data;
+    },
+  });
+}
+
+export function useMaintenance() {
+  return useQuery<any[]>({
+    queryKey: ["maintenance"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/maintenance");
+      return data;
+    },
+  });
+}
+
+export function useBookings() {
+  return useQuery<any[]>({
+    queryKey: ["bookings"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/bookings");
+      return data;
+    },
+  });
+}

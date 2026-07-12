@@ -149,49 +149,26 @@ export function EmployeeDashboard() {
 
   // Notification tab
   const [notifTab, setNotifTab] = useState("All");
+  const [myAssets, setMyAssets] = useState<any[]>([]);
 
-  // ─── My Assets State ─────────────────────────────────────────────
-  const [myAssets, setMyAssets] = useState([
-    { id: "AST-0010", name: "MacBook Pro 16\" M3 Max", category: "IT Hardware", condition: "Good", allocatedDate: "Jan 15, 2026", warrantyStatus: "Active", status: "Allocated", warrantyExpiry: "Jan 15, 2028" },
-    { id: "AST-0114", name: "Dell UltraSharp 32\" 4K Monitor", category: "IT Hardware", condition: "Good", allocatedDate: "Feb 18, 2026", warrantyStatus: "Active", status: "Allocated", warrantyExpiry: "Feb 18, 2027" },
-    { id: "AST-0552", name: "iPad Pro 12.9\" M2", category: "Mobile Devices", condition: "Fair", allocatedDate: "Mar 10, 2026", warrantyStatus: "Expiring", status: "Allocated", warrantyExpiry: "Sep 10, 2026" },
-  ]);
-
-  // ─── Bookings State ─────────────────────────────────────────────
-  const [bookings, setBookings] = useState([
-    { id: "BKG-001", resource: "Conference Room A", purpose: "Sprint Planning", date: "Jul 14, 2026", startTime: "09:00", endTime: "11:00", status: "Upcoming" },
-    { id: "BKG-002", resource: "Sony 4K Projector", purpose: "Client Demo", date: "Jul 16, 2026", startTime: "14:00", endTime: "16:00", status: "Upcoming" },
-    { id: "BKG-003", resource: "Lab Room B", purpose: "Hardware Testing", date: "Jul 8, 2026", startTime: "10:00", endTime: "13:00", status: "Completed" },
-  ]);
+  // Mock Data arrays cleared to be dynamic later
+  const [bookings, setBookings] = useState<any[]>([]);
   const [bookingForm, setBookingForm] = useState({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
 
   // ─── Maintenance Requests State ─────────────────────────────────
-  const [maintenanceReqs, setMaintenanceReqs] = useState([
-    { id: "MNT-001", assetId: "AST-0552", assetName: "iPad Pro 12.9\" M2", issue: "Screen flickering intermittently", issueType: "Hardware", priority: "High", status: "In Progress", createdOn: "Jul 10, 2026", technician: "Dave Miller", cost: "$120" },
-    { id: "MNT-002", assetId: "AST-0010", assetName: "MacBook Pro 16\" M3 Max", issue: "Keyboard keys sticking", issueType: "Hardware", priority: "Medium", status: "Pending", createdOn: "Jul 11, 2026", technician: "Unassigned", cost: "—" },
-  ]);
+  const [maintenanceReqs, setMaintenanceReqs] = useState<any[]>([]);
   const [maintForm, setMaintForm] = useState({ assetId: "", issueType: "Hardware", priority: "Medium", description: "", notes: "" });
 
   // ─── Transfer Requests State ─────────────────────────────────────
-  const [transferReqs, setTransferReqs] = useState([
-    { id: "TRF-001", assetName: "Dell UltraSharp 32\" 4K Monitor", assetId: "AST-0114", transferTo: "Priya Shah", department: "IT Operations", reason: "Project reassignment", requestDate: "Jul 09, 2026", status: "Pending" },
-  ]);
+  const [transferReqs, setTransferReqs] = useState<any[]>([]);
   const [transferForm, setTransferForm] = useState({ assetId: "", transferTo: "", department: "", reason: "" });
 
   // ─── Return Requests State ────────────────────────────────────────
-  const [returnReqs, setReturnReqs] = useState([
-    { id: "RTN-001", assetName: "Logitech MX Master 3", assetId: "AST-0088", reason: "No longer required", condition: "Good", requestDate: "Jul 07, 2026", status: "Approved", approvedBy: "Admin" },
-  ]);
+  const [returnReqs, setReturnReqs] = useState<any[]>([]);
   const [returnForm, setReturnForm] = useState({ assetId: "", reason: "", condition: "Good", notes: "" });
 
   // ─── Notifications State ──────────────────────────────────────────
-  const [notifications, setNotifications] = useState([
-    { id: 1, category: "Assets", priority: "High", title: "Warranty Expiring Soon", description: "iPad Pro 12.9\" M2 warranty expires in 60 days (Sep 10, 2026). Consider requesting a renewal.", timestamp: "Jul 12, 2026 · 09:14 AM", read: false },
-    { id: 2, category: "Maintenance", priority: "Medium", title: "Maintenance Update", description: "Your ticket MNT-001 for iPad Pro screen flickering is now In Progress. Technician Dave Miller has been assigned.", timestamp: "Jul 11, 2026 · 03:22 PM", read: false },
-    { id: 3, category: "Bookings", priority: "Low", title: "Booking Reminder", description: "You have a booking for Conference Room A tomorrow at 09:00 AM for Sprint Planning.", timestamp: "Jul 11, 2026 · 08:00 AM", read: true },
-    { id: 4, category: "Transfers", priority: "Low", title: "Transfer Request Submitted", description: "Your transfer request TRF-001 for Dell UltraSharp Monitor has been received and is pending approval.", timestamp: "Jul 09, 2026 · 02:45 PM", read: true },
-    { id: 5, category: "Assets", priority: "Low", title: "Asset Allocated", description: "MacBook Pro 16\" M3 Max (AST-0010) has been allocated to your profile as of Jan 15, 2026.", timestamp: "Jan 15, 2026 · 10:00 AM", read: true },
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // ─────────────────────────────────────────────────────────────────
   // RENDER HELPERS
