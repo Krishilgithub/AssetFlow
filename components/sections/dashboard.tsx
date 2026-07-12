@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -260,18 +261,15 @@ const CustomHeatmap = () => {
 };
 
 export function DashboardSection() {
+  const { data: kpis } = useDashboardKPIs();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   // Mock State for Departments
-  const [departments, setDepartments] = useState([
-    { id: "DEP-01", name: "Engineering", head: "Marcus Vance", headInitials: "MV", employeesCount: 42, assetsCount: 95, status: "Active", createdDate: "Jan 15, 2023" },
-    { id: "DEP-02", name: "IT Operations", head: "Priya Shah", headInitials: "PS", employeesCount: 15, assetsCount: 110, status: "Active", createdDate: "Mar 10, 2023" },
-    { id: "DEP-03", name: "Operations", head: "Alex Dupont", headInitials: "AD", employeesCount: 35, assetsCount: 45, status: "Active", createdDate: "Jun 02, 2022" },
-    { id: "DEP-04", name: "Marketing", head: "Sarah Jenkins", headInitials: "SJ", employeesCount: 22, assetsCount: 25, status: "Active", createdDate: "Sep 18, 2023" },
-    { id: "DEP-05", name: "Human Resources", head: "Darnell Cole", headInitials: "DC", employeesCount: 12, assetsCount: 30, status: "Active", createdDate: "Nov 01, 2023" },
-    { id: "DEP-06", name: "Finance", head: "Emily Rogers", headInitials: "ER", employeesCount: 8, assetsCount: 19, status: "Active", createdDate: "Dec 12, 2022" },
-  ]);
+  const { data: departmentsData } = useDepartments();
+  const departments = departmentsData || [];
+  const setDepartments: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
   // Mock State for Employees
   const [employees, setEmployees] = useState([
@@ -296,16 +294,9 @@ export function DashboardSection() {
   ]);
 
   // Mock State for Assets List
-  const [assetsList, setAssetsList] = useState([
-    { id: "AST-0010", name: "MacBook Pro 16\" M3 Max", category: "IT Hardware", custodian: "Priya Shah", department: "IT Operations", purchasedDate: "Jan 12, 2024", warrantyExpiry: "Jan 12, 2027", status: "Allocated" },
-    { id: "AST-0114", name: "Dell UltraSharp 32\" 4K", category: "IT Hardware", custodian: "Marcus Vance", department: "Engineering", purchasedDate: "Feb 18, 2024", warrantyExpiry: "Feb 18, 2027", status: "Allocated" },
-    { id: "AST-0221", name: "Projector Ultra HD 4K", category: "AV Equipment", custodian: "IT Pool", department: "IT Operations", purchasedDate: "Sep 05, 2023", warrantyExpiry: "Sep 05, 2025", status: "Available" },
-    { id: "AST-0552", name: "iPad Pro 12.9\" M2", category: "Mobile Devices", custodian: "Emily Rogers", department: "Finance", purchasedDate: "Jul 22, 2024", warrantyExpiry: "Jul 22, 2026", status: "Allocated" },
-    { id: "AST-0820", name: "ThinkPad X1 Carbon Gen 11", category: "IT Hardware", custodian: "Alex Dupont", department: "Operations", purchasedDate: "Nov 15, 2023", warrantyExpiry: "Nov 15, 2026", status: "Allocated" },
-    { id: "AST-0931", name: "Ergonomic Mesh Chair Office", category: "Office Furniture", custodian: "Darnell Cole", department: "Human Resources", purchasedDate: "Oct 01, 2023", warrantyExpiry: "Oct 01, 2028", status: "Allocated" },
-    { id: "AST-1044", name: "CISCO Catalyst Switch 24P", category: "Network Gear", custodian: "Network Admin", department: "IT Operations", purchasedDate: "Mar 11, 2024", warrantyExpiry: "Mar 11, 2027", status: "Allocated" },
-    { id: "AST-1088", name: "Camera Kit Sony Alpha 7 IV", category: "AV Equipment", custodian: "Sarah Jenkins", department: "Marketing", purchasedDate: "May 20, 2024", warrantyExpiry: "May 20, 2026", status: "Allocated" },
-  ]);
+  const { data: assetsData } = useAssetsList();
+  const assetsList = assetsData || [];
+  const setAssetsList: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
   // Mock State for Audits List
   const [auditsList, setAuditsList] = useState([
@@ -754,8 +745,8 @@ export function DashboardSection() {
           { title: "Active Employees", value: "158", sub: "Assigned gear checkouts", detail: "+3 onboarded recently", icon: UserMultipleIcon },
           { title: "Departments", value: "6", sub: "Corporate branches", detail: "Active cost centers", icon: Building01Icon },
           { title: "Pending Audits", value: "2", sub: "Verification checks", detail: "Awaiting physical scans", icon: Audit01Icon },
-          { title: "Active Maintenance", value: "4", sub: "Under service/repair", detail: "1 urgent diagnostic", icon: ToolsIcon },
-          { title: "Available Assets", value: "114", sub: "Ready in inventory", detail: "35.2% stock level", icon: PackageIcon },
+          { title: "Active Maintenance", value: kpis?.maintenanceToday ?? "0", sub: "Under service/repair", detail: "1 urgent diagnostic", icon: ToolsIcon },
+          { title: "Available Assets", value: kpis?.availableAssets ?? "0", sub: "Ready in inventory", detail: "35.2% stock level", icon: PackageIcon },
         ].map((card, i) => (
           <div key={i} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start">

@@ -1,4 +1,9 @@
-"use client";
+import * as fs from 'fs';
+import * as path from 'path';
+
+const signupPath = path.join(__dirname, 'components/sections/sign-up.tsx');
+
+const content = `"use client";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -97,7 +102,7 @@ export function SignUpSection() {
         const res = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential: tokenResponse.access_token })
+          body: JSON.stringify({ credential: tokenResponse.access_token }) // Depending on flow
         });
         const data = await res.json();
         if (res.ok) {
@@ -221,30 +226,6 @@ export function SignUpSection() {
                       <HugeiconsIcon icon={showPassword ? ViewOffIcon : ViewIcon} size={20} />
                     </button>
                   </div>
-                  
-                  {/* Password Constraints */}
-                  <div className="space-y-1.5 mt-2 pt-1">
-                    {[
-                      { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
-                      { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
-                      { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
-                      { label: "One number", test: (p: string) => /[0-9]/.test(p) },
-                    ].map((constraint, idx) => {
-                      const isValid = constraint.test(formData.password);
-                      return (
-                        <div key={idx} className={`flex items-center text-xs transition-colors duration-200 ${isValid ? 'text-green-600' : 'text-gray-400'}`}>
-                          <svg className="w-3.5 h-3.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isValid ? 3 : 2}>
-                            {isValid ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            ) : (
-                              <circle cx="12" cy="12" r="9" />
-                            )}
-                          </svg>
-                          {constraint.label}
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -316,3 +297,7 @@ export function SignUpSection() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync(signupPath, content);
+console.log('SignUp Section Patched Successfully!');

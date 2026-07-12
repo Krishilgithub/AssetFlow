@@ -3,18 +3,81 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ViewIcon, ViewOffIcon, AsteriskIcon } from "@hugeicons/core-free-icons";
 import GoogleIcon from "@/components/icons/google";
+import { useGoogleLogin } from '@react-oauth/google';
+import toast, { Toaster } from "react-hot-toast";
 
 export function LoginSection() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Login failed");
+      } else {
+        toast.success("Welcome back!");
+        // We set cookie on backend. Just route to dashboard.
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: tokenResponse.access_token })
+        });
+        const data = await res.json();
+        if (res.ok) {
+           toast.success("Logged in successfully!");
+           router.push('/dashboard');
+        } else {
+           toast.error(data.error || "Google login failed");
+        }
+      } catch (err) {
+        toast.error("An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
 
   return (
     <div className="flex min-h-screen bg-white text-[#1A1A1A] font-sans selection:bg-blue-100">
+      <Toaster position="top-center" />
       {/* Left Column - Gradient Image Area */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-10 m-4 rounded-[32px] bg-black relative overflow-hidden">
-        {/* Placeholder for gradient image - User can replace src */}
         <Image 
           src="https://i.pinimg.com/736x/28/8e/26/288e26365d8b31ef42acff350c01c993.jpg" 
           alt="Abstract Gradient"
@@ -50,12 +113,16 @@ export function LoginSection() {
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleLogin}>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-900">Your email</label>
               <input 
                 type="email" 
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="youremail@gmail.com" 
+                required
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all placeholder:text-gray-400 text-sm"
               />
             </div>
@@ -68,7 +135,11 @@ export function LoginSection() {
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="••••••••••" 
+                  required
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all placeholder:text-gray-400 text-sm"
                 />
                 <button 
@@ -81,8 +152,8 @@ export function LoginSection() {
               </div>
             </div>
 
-            <button className="w-full py-3.5 mt-4 bg-black hover:bg-neutral-800 text-white rounded-xl font-semibold transition-colors">
-              Log In
+            <button disabled={loading} className="w-full py-3.5 mt-4 bg-black hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl font-semibold transition-colors">
+              {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
@@ -93,7 +164,7 @@ export function LoginSection() {
               <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
-            <button className="w-full flex items-center justify-center gap-2.5 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors text-sm">
+            <button onClick={() => googleLogin()} className="w-full flex items-center justify-center gap-2.5 py-3 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors text-sm">
               <GoogleIcon className="w-5 h-5" />
               <span>Log in with Google</span>
             </button>

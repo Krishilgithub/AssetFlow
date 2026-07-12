@@ -1,0 +1,471 @@
+generator client {
+  provider        = "prisma-client-js"
+  engineType      = "library"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asset_allocations {
+  id                                          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asset_id                                    String    @db.Uuid
+  allocated_to                                String    @db.Uuid
+  allocated_by                                String    @db.Uuid
+  allocation_date                             DateTime  @default(now()) @db.Timestamptz(6)
+  return_date                                 DateTime? @db.Timestamptz(6)
+  expected_return_date                        DateTime? @db.Timestamptz(6)
+  status                                      String    @default("Active") @db.VarChar(50)
+  notes                                       String?
+  created_at                                  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                                  DateTime? @default(now()) @db.Timestamptz(6)
+  version                                     Int?      @default(1)
+  users_asset_allocations_allocated_byTousers users     @relation("asset_allocations_allocated_byTousers", fields: [allocated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_allocations_allocated_toTousers users     @relation("asset_allocations_allocated_toTousers", fields: [allocated_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                                      assets    @relation(fields: [asset_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([asset_id, status], map: "idx_allocations_active", where: raw("((status)::text = 'Active'::text)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asset_audit_items {
+  audit_id     String       @db.Uuid
+  asset_id     String       @db.Uuid
+  status       String       @default("Pending") @db.VarChar(50)
+  notes        String?
+  assets       assets       @relation(fields: [asset_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asset_audits asset_audits @relation(fields: [audit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([audit_id, asset_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asset_audits {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String              @db.VarChar(255)
+  department_id     String?             @db.Uuid
+  auditor_id        String              @db.Uuid
+  status            String              @default("Scheduled") @db.VarChar(50)
+  start_date        DateTime?           @db.Timestamptz(6)
+  end_date          DateTime?           @db.Timestamptz(6)
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  version           Int?                @default(1)
+  asset_audit_items asset_audit_items[]
+  users             users               @relation(fields: [auditor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments       departments?        @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model asset_categories {
+  id                                       String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                                     String             @db.VarChar(100)
+  parent_category_id                       String?            @db.Uuid
+  description                              String?
+  created_at                               DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime?          @default(now()) @db.Timestamptz(6)
+  created_by                               String?            @db.Uuid
+  updated_by                               String?            @db.Uuid
+  version                                  Int?               @default(1)
+  is_deleted                               Boolean?           @default(false)
+  deleted_at                               DateTime?          @db.Timestamptz(6)
+  deleted_by                               String?            @db.Uuid
+  users_asset_categories_created_byTousers users?             @relation("asset_categories_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_categories_deleted_byTousers users?             @relation("asset_categories_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asset_categories                         asset_categories?  @relation("asset_categoriesToasset_categories", fields: [parent_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_asset_categories                   asset_categories[] @relation("asset_categoriesToasset_categories")
+  users_asset_categories_updated_byTousers users?             @relation("asset_categories_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                                   assets[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asset_maintenances {
+  id                                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asset_id                                      String    @db.Uuid
+  technician_id                                 String?   @db.Uuid
+  reported_by                                   String    @db.Uuid
+  issue_description                             String
+  maintenance_cost                              Decimal?  @db.Decimal(12, 2)
+  status                                        String    @default("Pending Approval") @db.VarChar(50)
+  start_date                                    DateTime? @db.Timestamptz(6)
+  end_date                                      DateTime? @db.Timestamptz(6)
+  created_at                                    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                                    DateTime? @default(now()) @db.Timestamptz(6)
+  version                                       Int?      @default(1)
+  assets                                        assets    @relation(fields: [asset_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_maintenances_reported_byTousers   users     @relation("asset_maintenances_reported_byTousers", fields: [reported_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_maintenances_technician_idTousers users?    @relation("asset_maintenances_technician_idTousers", fields: [technician_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asset_transfers {
+  id                                                          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  asset_id                                                    String      @db.Uuid
+  from_department_id                                          String      @db.Uuid
+  to_department_id                                            String      @db.Uuid
+  requested_by                                                String      @db.Uuid
+  approved_by                                                 String?     @db.Uuid
+  status                                                      String      @default("Pending") @db.VarChar(50)
+  transfer_date                                               DateTime?   @db.Timestamptz(6)
+  notes                                                       String?
+  created_at                                                  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at                                                  DateTime?   @default(now()) @db.Timestamptz(6)
+  version                                                     Int?        @default(1)
+  users_asset_transfers_approved_byTousers                    users?      @relation("asset_transfers_approved_byTousers", fields: [approved_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  assets                                                      assets      @relation(fields: [asset_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments_asset_transfers_from_department_idTodepartments departments @relation("asset_transfers_from_department_idTodepartments", fields: [from_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_asset_transfers_requested_byTousers                   users       @relation("asset_transfers_requested_byTousers", fields: [requested_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments_asset_transfers_to_department_idTodepartments   departments @relation("asset_transfers_to_department_idTodepartments", fields: [to_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model assets {
+  id                             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                           String               @db.VarChar(255)
+  tag_number                     String               @unique @db.VarChar(100)
+  serial_number                  String?              @unique @db.VarChar(100)
+  category_id                    String               @db.Uuid
+  department_id                  String               @db.Uuid
+  location_id                    String               @db.Uuid
+  status                         String               @default("Available") @db.VarChar(50)
+  purchase_date                  DateTime?            @db.Date
+  purchase_cost                  Decimal?             @db.Decimal(12, 2)
+  created_at                     DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime?            @default(now()) @db.Timestamptz(6)
+  created_by                     String?              @db.Uuid
+  updated_by                     String?              @db.Uuid
+  version                        Int?                 @default(1)
+  is_deleted                     Boolean?             @default(false)
+  deleted_at                     DateTime?            @db.Timestamptz(6)
+  deleted_by                     String?              @db.Uuid
+  asset_allocations              asset_allocations[]
+  asset_audit_items              asset_audit_items[]
+  asset_maintenances             asset_maintenances[]
+  asset_transfers                asset_transfers[]
+  asset_categories               asset_categories     @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_assets_created_byTousers users?               @relation("assets_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_assets_deleted_byTousers users?               @relation("assets_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                    departments          @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations                      locations            @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_assets_updated_byTousers users?               @relation("assets_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([department_id], map: "idx_assets_department", where: raw("(NOT is_deleted)"))
+  @@index([status], map: "idx_assets_status", where: raw("(NOT is_deleted)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model audit_logs {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  table_name   String    @db.VarChar(100)
+  record_id    String    @db.Uuid
+  action_type  String    @db.VarChar(20)
+  old_value    Json?
+  new_value    Json?
+  performed_by String?   @db.Uuid
+  ip_address   String?   @db.VarChar(45)
+  user_agent   String?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  users        users?    @relation(fields: [performed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([performed_by], map: "idx_audit_logs_performed_by")
+  @@index([table_name, record_id], map: "idx_audit_logs_record")
+}
+
+model departments {
+  id                                                              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                                                            String             @db.VarChar(100)
+  location_id                                                     String?            @db.Uuid
+  manager_id                                                      String?            @db.Uuid
+  parent_department_id                                            String?            @db.Uuid
+  created_at                                                      DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at                                                      DateTime?          @default(now()) @db.Timestamptz(6)
+  created_by                                                      String?            @db.Uuid
+  updated_by                                                      String?            @db.Uuid
+  version                                                         Int?               @default(1)
+  is_deleted                                                      Boolean?           @default(false)
+  deleted_at                                                      DateTime?          @db.Timestamptz(6)
+  deleted_by                                                      String?            @db.Uuid
+  asset_audits                                                    asset_audits[]
+  asset_transfers_asset_transfers_from_department_idTodepartments asset_transfers[]  @relation("asset_transfers_from_department_idTodepartments")
+  asset_transfers_asset_transfers_to_department_idTodepartments   asset_transfers[]  @relation("asset_transfers_to_department_idTodepartments")
+  assets                                                          assets[]
+  users_departments_created_byTousers                             users?             @relation("departments_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_departments_deleted_byTousers                             users?             @relation("departments_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations                                                       locations?         @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_departments_manager_idTousers                             users?             @relation("departments_manager_idTousers", fields: [manager_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  departments                                                     departments?       @relation("departmentsTodepartments", fields: [parent_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_departments                                               departments[]      @relation("departmentsTodepartments")
+  users_departments_updated_byTousers                             users?             @relation("departments_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_departments                                                user_departments[]
+}
+
+model locations {
+  id                                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                              String        @db.VarChar(100)
+  address                           String?
+  city                              String?       @db.VarChar(100)
+  country                           String?       @db.VarChar(100)
+  created_at                        DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at                        DateTime?     @default(now()) @db.Timestamptz(6)
+  created_by                        String?       @db.Uuid
+  updated_by                        String?       @db.Uuid
+  version                           Int?          @default(1)
+  is_deleted                        Boolean?      @default(false)
+  deleted_at                        DateTime?     @db.Timestamptz(6)
+  deleted_by                        String?       @db.Uuid
+  assets                            assets[]
+  departments                       departments[]
+  users_locations_created_byTousers users?        @relation("locations_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_locations_deleted_byTousers users?        @relation("locations_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_locations_updated_byTousers users?        @relation("locations_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resources                         resources[]
+}
+
+model notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  title      String    @db.VarChar(255)
+  message    String
+  type       String    @db.VarChar(50)
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model permissions {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  resource_name    String             @db.VarChar(100)
+  action           String             @db.VarChar(50)
+  description      String?
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  role_permissions role_permissions[]
+
+  @@unique([resource_name, action])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+model resource_bookings {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  resource_id String    @db.Uuid
+  booked_by   String    @db.Uuid
+  start_time  DateTime  @db.Timestamptz(6)
+  end_time    DateTime  @db.Timestamptz(6)
+  status      String    @default("Confirmed") @db.VarChar(50)
+  purpose     String?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  version     Int?      @default(1)
+  users       users     @relation(fields: [booked_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  resources   resources @relation(fields: [resource_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model resources {
+  id                                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                              String              @db.VarChar(255)
+  resource_type                     String              @db.VarChar(50)
+  location_id                       String              @db.Uuid
+  capacity                          Int?
+  status                            String              @default("Available") @db.VarChar(50)
+  created_at                        DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at                        DateTime?           @default(now()) @db.Timestamptz(6)
+  created_by                        String?             @db.Uuid
+  updated_by                        String?             @db.Uuid
+  version                           Int?                @default(1)
+  is_deleted                        Boolean?            @default(false)
+  deleted_at                        DateTime?           @db.Timestamptz(6)
+  deleted_by                        String?             @db.Uuid
+  resource_bookings                 resource_bookings[]
+  users_resources_created_byTousers users?              @relation("resources_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_resources_deleted_byTousers users?              @relation("resources_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations                         locations           @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_resources_updated_byTousers users?              @relation("resources_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model role_permissions {
+  role_id       String      @db.Uuid
+  permission_id String      @db.Uuid
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id])
+}
+
+model roles {
+  id                            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                          String             @unique @db.VarChar(100)
+  description                   String?
+  created_at                    DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime?          @default(now()) @db.Timestamptz(6)
+  created_by                    String?            @db.Uuid
+  updated_by                    String?            @db.Uuid
+  version                       Int?               @default(1)
+  is_deleted                    Boolean?           @default(false)
+  deleted_at                    DateTime?          @db.Timestamptz(6)
+  deleted_by                    String?            @db.Uuid
+  role_permissions              role_permissions[]
+  users_roles_created_byTousers users?             @relation("roles_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_roles_deleted_byTousers users?             @relation("roles_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_roles_updated_byTousers users?             @relation("roles_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_roles                    user_roles[]
+}
+
+model user_departments {
+  user_id       String      @db.Uuid
+  department_id String      @db.Uuid
+  is_primary    Boolean?    @default(true)
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  departments   departments @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, department_id])
+}
+
+model user_roles {
+  user_id    String    @db.Uuid
+  role_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  roles      roles     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, role_id])
+}
+
+model users {
+  id                                                         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                      String                 @unique @db.VarChar(255)
+  password_hash                                              String                 @db.VarChar(255)
+  first_name                                                 String                 @db.VarChar(100)
+  last_name                                                  String                 @db.VarChar(100)
+  is_active                                                  Boolean?               @default(true)
+  created_at                                                 DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at                                                 DateTime?              @default(now()) @db.Timestamptz(6)
+  created_by                                                 String?                @db.Uuid
+  updated_by                                                 String?                @db.Uuid
+  version                                                    Int?                   @default(1)
+  is_deleted                                                 Boolean?               @default(false)
+  deleted_at                                                 DateTime?              @db.Timestamptz(6)
+  deleted_by                                                 String?                @db.Uuid
+  asset_allocations_asset_allocations_allocated_byTousers    asset_allocations[]    @relation("asset_allocations_allocated_byTousers")
+  asset_allocations_asset_allocations_allocated_toTousers    asset_allocations[]    @relation("asset_allocations_allocated_toTousers")
+  asset_audits                                               asset_audits[]
+  asset_categories_asset_categories_created_byTousers        asset_categories[]     @relation("asset_categories_created_byTousers")
+  asset_categories_asset_categories_deleted_byTousers        asset_categories[]     @relation("asset_categories_deleted_byTousers")
+  asset_categories_asset_categories_updated_byTousers        asset_categories[]     @relation("asset_categories_updated_byTousers")
+  asset_maintenances_asset_maintenances_reported_byTousers   asset_maintenances[]   @relation("asset_maintenances_reported_byTousers")
+  asset_maintenances_asset_maintenances_technician_idTousers asset_maintenances[]   @relation("asset_maintenances_technician_idTousers")
+  asset_transfers_asset_transfers_approved_byTousers         asset_transfers[]      @relation("asset_transfers_approved_byTousers")
+  asset_transfers_asset_transfers_requested_byTousers        asset_transfers[]      @relation("asset_transfers_requested_byTousers")
+  assets_assets_created_byTousers                            assets[]               @relation("assets_created_byTousers")
+  assets_assets_deleted_byTousers                            assets[]               @relation("assets_deleted_byTousers")
+  assets_assets_updated_byTousers                            assets[]               @relation("assets_updated_byTousers")
+  audit_logs                                                 audit_logs[]
+  departments_departments_created_byTousers                  departments[]          @relation("departments_created_byTousers")
+  departments_departments_deleted_byTousers                  departments[]          @relation("departments_deleted_byTousers")
+  departments_departments_manager_idTousers                  departments[]          @relation("departments_manager_idTousers")
+  departments_departments_updated_byTousers                  departments[]          @relation("departments_updated_byTousers")
+  locations_locations_created_byTousers                      locations[]            @relation("locations_created_byTousers")
+  locations_locations_deleted_byTousers                      locations[]            @relation("locations_deleted_byTousers")
+  locations_locations_updated_byTousers                      locations[]            @relation("locations_updated_byTousers")
+  notifications                                              notifications[]
+  resource_bookings                                          resource_bookings[]
+  resources_resources_created_byTousers                      resources[]            @relation("resources_created_byTousers")
+  resources_resources_deleted_byTousers                      resources[]            @relation("resources_deleted_byTousers")
+  resources_resources_updated_byTousers                      resources[]            @relation("resources_updated_byTousers")
+  roles_roles_created_byTousers                              roles[]                @relation("roles_created_byTousers")
+  roles_roles_deleted_byTousers                              roles[]                @relation("roles_deleted_byTousers")
+  roles_roles_updated_byTousers                              roles[]                @relation("roles_updated_byTousers")
+  user_departments                                           user_departments[]
+  user_roles                                                 user_roles[]
+  users_users_created_byTousers                              users?                 @relation("users_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users_users_created_byTousers                        users[]                @relation("users_created_byTousers")
+  users_users_deleted_byTousers                              users?                 @relation("users_deleted_byTousers", fields: [deleted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users_users_deleted_byTousers                        users[]                @relation("users_deleted_byTousers")
+  users_users_updated_byTousers                              users?                 @relation("users_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users_users_updated_byTousers                        users[]                @relation("users_updated_byTousers")
+  sessions                                                   sessions[]
+  refreshTokens                                              refresh_tokens[]
+  emailVerifications                                         email_verifications?
+  passwordResetTokens                                        password_reset_tokens?
+  loginHistories                                             login_history[]
+  oauthAccounts                                              oauth_accounts[]
+}
+
+model sessions {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  expires    DateTime  @db.Timestamptz(6)
+  ip_address String?   @db.VarChar(45)
+  user_agent String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model refresh_tokens {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @db.Uuid
+  token       String    @unique @db.VarChar(255)
+  expires     DateTime  @db.Timestamptz(6)
+  revoked     Boolean   @default(false)
+  replaced_by String?   @db.VarChar(255)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model email_verifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @unique @db.Uuid
+  email      String    @db.VarChar(255)
+  otp_hash   String    @db.VarChar(255)
+  expires    DateTime  @db.Timestamptz(6)
+  attempts   Int       @default(0)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model password_reset_tokens {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @unique @db.Uuid
+  token_hash String    @db.VarChar(255)
+  expires    DateTime  @db.Timestamptz(6)
+  used       Boolean   @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model login_history {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  ip_address String?   @db.VarChar(45)
+  user_agent String?
+  os         String?   @db.VarChar(100)
+  browser    String?   @db.VarChar(100)
+  country    String?   @db.VarChar(100)
+  status     String    @db.VarChar(50) // "SUCCESS", "FAILED", "LOCKED"
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model failed_logins {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  ip_address   String?   @db.VarChar(45)
+  count        Int       @default(1)
+  locked_until DateTime? @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model oauth_accounts {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  provider         String    @db.VarChar(50) // "google"
+  provider_user_id String    @db.VarChar(255)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_user_id])
+}
