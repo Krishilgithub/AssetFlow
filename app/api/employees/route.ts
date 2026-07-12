@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { CoreService, createEmployeeSchema } from '@/lib/services/CoreService';
 import { z } from 'zod';
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 
 export async function GET() {
   try {
@@ -18,10 +19,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createEmployeeSchema.parse(body);
     
-    // Default system user ID for now if no auth session is checked
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
-    
-    const employee = await CoreService.createEmployee(parsed, defaultUserId);
+    const user = await getAuthUser();
+    const employee = await CoreService.createEmployee(parsed, user?.id || null);
     return NextResponse.json(employee, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

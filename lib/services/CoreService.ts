@@ -63,7 +63,7 @@ export class CoreService {
     });
   }
 
-  static async createEmployee(data: z.infer<typeof createEmployeeSchema>, currentUserId: string) {
+  static async createEmployee(data: z.infer<typeof createEmployeeSchema>, currentUserId?: string | null) {
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-10) + "A1!";
     const passwordHash = await argon2.hash(tempPassword);
@@ -74,7 +74,7 @@ export class CoreService {
         last_name: data.lastName,
         email: data.email,
         password_hash: passwordHash,
-        created_by: currentUserId
+        created_by: currentUserId || undefined
       }
     });
 
@@ -107,7 +107,7 @@ export class CoreService {
         table_name: 'users',
         record_id: newUser.id,
         action_type: 'INSERT',
-        performed_by: currentUserId,
+        performed_by: currentUserId || undefined,
       }
     });
 
