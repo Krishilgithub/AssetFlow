@@ -930,7 +930,6 @@ export function EmployeeDashboard() {
         await axios.post('/api/me/transfers', {
           assetId: transferForm.assetId,
           transferTo: transferForm.transferTo,
-          departmentId: "00000000-0000-0000-0000-000000000000", // Need actual ID
           reason: transferForm.reason
         });
         setTransferForm({ assetId: "", transferTo: "", department: "", reason: "" });

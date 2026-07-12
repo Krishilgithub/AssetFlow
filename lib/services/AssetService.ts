@@ -22,16 +22,16 @@ export const createAssetSchema = z.object({
 export const allocateAssetSchema = z.object({
   assetId: z.string().regex(uuidRegex, "Invalid UUID format"),
   allocatedToId: z.string().regex(uuidRegex, "Invalid UUID format"),
-  allocatedById: z.string().regex(uuidRegex, "Invalid UUID format"),
+  allocatedById: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
   expectedReturnDate: z.string().optional(),
   notes: z.string().optional(),
 });
 
 export const transferAssetSchema = z.object({
   assetId: z.string().regex(uuidRegex, "Invalid UUID format"),
-  fromDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
-  toDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
-  requestedById: z.string().regex(uuidRegex, "Invalid UUID format"),
+  fromDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
+  toDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
+  requestedById: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
   reason: z.string().optional(),
 });
 

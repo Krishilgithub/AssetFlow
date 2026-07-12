@@ -55,7 +55,6 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
       const payload: Record<string, any> = {
         assetId,
         allocatedToId,
-        allocatedById: currentUser?.id || "00000000-0000-0000-0000-000000000001",
       };
       if (expectedReturnDate) payload.expectedReturnDate = expectedReturnDate;
       if (notes) payload.notes = notes;
@@ -113,9 +112,6 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
       // But we can just use the transfer API.
       const payload = {
         assetId,
-        fromDepartmentId: "00000000-0000-0000-0000-000000000000", // We should ideally get this from the asset
-        toDepartmentId: "00000000-0000-0000-0000-000000000000",
-        requestedById: currentUser?.id || "00000000-0000-0000-0000-000000000001",
         reason: "Requested via conflict resolution during allocation"
       };
       

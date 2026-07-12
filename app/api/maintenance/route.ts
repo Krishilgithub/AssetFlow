@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { OperationsService, createMaintenanceSchema } from '@/lib/services/OperationsService';
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 import { z } from 'zod';
 
 export async function GET() {
@@ -18,9 +19,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createMaintenanceSchema.parse(body);
 
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
+    const user = await getAuthUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
-    const record = await OperationsService.createMaintenance(parsed, defaultUserId);
+    const record = await OperationsService.createMaintenance(parsed, user.id);
 
     return NextResponse.json(record, { status: 201 });
   } catch (error) {

@@ -18,9 +18,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = transferAssetSchema.parse(body);
 
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
+    const user = await getAuthUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     
-    const transfer = await AssetService.createTransfer(parsed, defaultUserId);
+    const transfer = await AssetService.createTransfer(parsed, user.id);
 
     return NextResponse.json(transfer, { status: 201 });
   } catch (error) {

@@ -19,7 +19,7 @@ export const createMaintenanceSchema = z.object({
 export const createTransferSchema = z.object({
   assetId: z.string().uuid(),
   transferTo: z.string(), // employee name or UUID
-  departmentId: z.string().uuid(),
+  departmentId: z.string().uuid().optional(),
   reason: z.string()
 });
 
@@ -157,12 +157,14 @@ export class EmployeeService {
     const asset = await prisma.assets.findUnique({ where: { id: data.assetId } });
     if (!asset) throw new Error('Asset not found');
 
+    const user = await prisma.users.findUnique({ where: { id: userId }, include: { departments_users_department_idTodepartments: true } });
+
     return prisma.asset_transfers.create({
       data: {
         asset_id: data.assetId,
         requested_by: userId,
         from_department_id: asset.department_id,
-        to_department_id: data.departmentId,
+        to_department_id: data.departmentId || user?.department_id,
         notes: `Transfer to ${data.transferTo}. Reason: ${data.reason}`,
         status: 'Pending'
       }

@@ -632,8 +632,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 assetId,
-                                allocatedToId: data.id,
-                                allocatedById: "00000000-0000-0000-0000-000000000000"
+                                allocatedToId: data.id
                               }),
                             });
 
