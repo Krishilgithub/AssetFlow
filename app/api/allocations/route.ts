@@ -20,7 +20,14 @@ export async function POST(request: Request) {
     const parsed = allocateAssetSchema.parse(body);
 
     const user = await getAuthUser();
-    const allocation = await AssetService.allocateAsset(parsed, user?.id || '00000000-0000-0000-0000-000000000001');
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const allocation = await AssetService.allocateAsset({
+      ...parsed,
+      allocatedById: user.id
+    }, user.id);
 
     return NextResponse.json(allocation, { status: 201 });
   } catch (error) {

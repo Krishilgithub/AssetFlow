@@ -586,7 +586,50 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               )}
               {drawerTab === "Assets" && (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-neutral-900">Items checked out by {data.name}:</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-neutral-900">Items checked out by {data.name}:</p>
+                    {assetsList.filter(a => a.status === 'Available').length > 0 && (
+                      <select
+                        id="employee-assign-asset-select"
+                        defaultValue=""
+                        onChange={async (e) => {
+                          const assetId = e.target.value;
+                          if (!assetId) return;
+                          
+                          try {
+                            const res = await fetch("/api/allocations", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                assetId,
+                                allocatedToId: data.id,
+                                allocatedById: "00000000-0000-0000-0000-000000000000"
+                              }),
+                            });
+
+                            if (res.ok) {
+                              triggerToast("Asset assigned successfully", "success");
+                              queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+                              queryClient.invalidateQueries({ queryKey: ["dashboard", "kpis"] });
+                              queryClient.invalidateQueries({ queryKey: ["employees"] });
+                            } else {
+                              const err = await res.json().catch(() => ({}));
+                              triggerToast(err.error || "Failed to assign asset", "error");
+                            }
+                          } catch {
+                            triggerToast("An error occurred", "error");
+                          }
+                          e.target.value = "";
+                        }}
+                        className="text-[11px] border border-neutral-300 rounded px-2 py-0.5 bg-white text-neutral-800 focus:outline-none max-w-[130px]"
+                      >
+                        <option value="" disabled>+ Assign Asset</option>
+                        {assetsList.filter(a => a.status === 'Available').map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                   <div className="border border-neutral-200 rounded-lg overflow-hidden text-xs">
                     <table className="w-full text-left">
                       <thead className="bg-neutral-50 text-[10px] text-neutral-400 font-bold uppercase">
@@ -1534,42 +1577,71 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
     </div>
   );
 
-  // Render Page 8 - Reports
-  const renderReports = () => (
-    <div className="space-y-6">
-      <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4">
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Reports & Disclosures</h3>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Generate custom reports, depreciation sheets, and audit ledgers</p>
-        </div>
-        <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-4 text-xs font-semibold text-neutral-600">
-          <span>Export Options:</span>
-          <button onClick={() => triggerToast("CSV export compiled", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">CSV</button>
-          <button onClick={() => triggerToast("Excel ledger compiled", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">Excel</button>
-          <button onClick={() => triggerToast("PDF document compiled", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">PDF</button>
-        </div>
-      </div>
+  const downloadReport = async (format: 'assets' | 'allocations' | 'transfers' | 'maintenance') => {
+    try {
+      triggerToast("Generating report...", "success");
+      const res = await fetch(`/api/reports/export?format=${format}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to generate report");
+      }
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const now = new Date().toISOString().split('T')[0];
+      a.download = `${format}-report-${now}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      triggerToast("Report downloaded successfully", "success");
+    } catch (error: any) {
+      triggerToast(error.message || "An error occurred", "error");
+    }
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          { title: "Asset Audit Ledger", desc: "List of active assets mapped to auditor checkout status." },
-          { title: "Department Cost Sheet", desc: "Financial depreciation checklist across divisions." },
-          { title: "Employee Allocation Report", desc: "Complete records of checked out corporate gear." },
-          { title: "System Maintenance Audit", desc: "Diagnostic checks schedules and repair ledger." },
-        ].map((report, idx) => (
-          <div key={idx} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between gap-4">
-            <div>
-              <h4 className="text-xs font-bold text-neutral-900">{report.title}</h4>
-              <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-relaxed">{report.desc}</p>
-            </div>
-            <button onClick={() => triggerToast(`${report.title} generated`, "success")} className="w-full py-2 bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg text-xs font-bold transition-all">
-              Generate Report
-            </button>
+  // Render Page 8 - Reports
+  const renderReports = () => {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Reports & Disclosures</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Generate custom reports, depreciation sheets, and audit ledgers</p>
           </div>
-        ))}
+          <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-4 text-xs font-semibold text-neutral-600">
+            <span>Export Options:</span>
+            <button onClick={() => downloadReport("assets")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">CSV</button>
+            <button onClick={() => downloadReport("allocations")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">Excel</button>
+            <button onClick={() => downloadReport("maintenance")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">PDF</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { title: "Asset Audit Ledger", format: "assets", desc: "List of active assets mapped to auditor checkout status." },
+            { title: "Department Cost Sheet", format: "transfers", desc: "Financial depreciation checklist across divisions." },
+            { title: "Employee Allocation Report", format: "allocations", desc: "Complete records of checked out corporate gear." },
+            { title: "System Maintenance Audit", format: "maintenance", desc: "Diagnostic checks schedules and repair ledger." },
+          ].map((report, idx) => (
+            <div key={idx} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between gap-4">
+              <div>
+                <h4 className="text-xs font-bold text-neutral-900">{report.title}</h4>
+                <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-relaxed">{report.desc}</p>
+              </div>
+              <button onClick={() => downloadReport(report.format as any)} className="w-full py-2 bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg text-xs font-bold transition-all">
+                Generate Report
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render Page 9 - Notifications Center
   const renderNotifications = () => (
