@@ -265,6 +265,7 @@ const CustomHeatmap = () => {
 
 export function DashboardSection({ initialRole = "Admin" }: { initialRole?: string }) {
   const { data: kpis } = useDashboardKPIs();
+  const { data: chartsData } = useDashboardCharts();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -714,12 +715,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       {/* Row 1 - KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
         {[
-          { title: "Total Assets", value: "324", sub: "Across all categories", detail: "+12 added this month", icon: PackageIcon },
-          { title: "Active Employees", value: "158", sub: "Assigned gear checkouts", detail: "+3 onboarded recently", icon: UserMultipleIcon },
-          { title: "Departments", value: "6", sub: "Corporate branches", detail: "Active cost centers", icon: Building01Icon },
-          { title: "Pending Audits", value: "2", sub: "Verification checks", detail: "Awaiting physical scans", icon: Audit01Icon },
-          { title: "Active Maintenance", value: kpis?.maintenanceToday ?? "0", sub: "Under service/repair", detail: "1 urgent diagnostic", icon: ToolsIcon },
-          { title: "Available Assets", value: kpis?.availableAssets ?? "0", sub: "Ready in inventory", detail: "35.2% stock level", icon: PackageIcon },
+          { title: "Total Assets", value: kpis?.totalAssets?.toString() ?? "0", sub: "Across all categories", detail: "Active items", icon: PackageIcon },
+          { title: "Active Employees", value: employees.length.toString(), sub: "Assigned gear checkouts", detail: "In directory", icon: UserMultipleIcon },
+          { title: "Departments", value: departments.length.toString(), sub: "Corporate branches", detail: "Active cost centers", icon: Building01Icon },
+          { title: "Pending Audits", value: auditsList.filter((a: any) => a.status === 'Pending').length.toString(), sub: "Verification checks", detail: "Awaiting physical scans", icon: Audit01Icon },
+          { title: "Active Maintenance", value: kpis?.maintenanceToday?.toString() ?? "0", sub: "Under service/repair", detail: "Active", icon: ToolsIcon },
+          { title: "Available Assets", value: kpis?.availableAssets?.toString() ?? "0", sub: "Ready in inventory", detail: "Stock level", icon: PackageIcon },
         ].map((card, i) => (
           <div key={i} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -774,7 +775,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           </div>
           <div className="mt-2">
             <CustomDonutChart
-              data={[
+              data={chartsData?.categoryData && chartsData.categoryData.length > 0 ? chartsData.categoryData : [
                 { name: "IT Hardware", value: 145, color: "#171717" },
                 { name: "AV Equipment", value: 32, color: "#404040" },
                 { name: "Office Furniture", value: 65, color: "#737373" },

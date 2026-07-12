@@ -6,7 +6,7 @@ import { NotificationService } from '@/lib/services/NotificationService';
 export async function GET() {
   try {
     const user = await getAuthUser();
-    if (!user) return unauthorizedResponse();
+    if (!user) return NextResponse.json([]);
     const data = await NotificationService.getForUser(user.id);
     return NextResponse.json(data);
   } catch (error: any) {

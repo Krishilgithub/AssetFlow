@@ -147,7 +147,7 @@ export class CoreService {
     });
   }
 
-  static async createDepartment(data: z.infer<typeof createDepartmentSchema>, currentUserId: string) {
+  static async createDepartment(data: z.infer<typeof createDepartmentSchema>, currentUserId?: string | null) {
     const dept = await prisma.departments.create({
       data: {
         name: data.name,

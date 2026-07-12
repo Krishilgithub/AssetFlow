@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { CoreService, createDepartmentSchema } from '@/lib/services/CoreService';
 import { z } from 'zod';
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 
 export async function GET() {
   try {
@@ -18,10 +19,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createDepartmentSchema.parse(body);
     
-    // Default system user ID for now if no auth session is checked
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
+    const user = await getAuthUser();
     
-    const department = await CoreService.createDepartment(parsed, defaultUserId);
+    const department = await CoreService.createDepartment(parsed, user?.id || null);
     return NextResponse.json(department, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
