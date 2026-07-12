@@ -36,8 +36,9 @@ export class CoreService {
         user_departments: {
           include: { departments: true }
         },
-        _count: {
-          select: { asset_allocations_asset_allocations_allocated_toTousers: { where: { status: 'Active' } } }
+        asset_allocations_asset_allocations_allocated_toTousers: { 
+          where: { status: 'Active' },
+          select: { id: true }
         }
       }
     });
@@ -55,7 +56,7 @@ export class CoreService {
         email: user.email,
         role,
         dept: primaryDept, // mapped to 'dept' for the frontend
-        allocatedAssetsCount: user._count.asset_allocations_asset_allocations_allocated_toTousers,
+        allocatedAssetsCount: user.asset_allocations_asset_allocations_allocated_toTousers?.length || 0,
         status: user.is_active ? 'Active' : 'Inactive',
         joinDate: user.created_at?.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
       };

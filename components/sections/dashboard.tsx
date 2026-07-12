@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
 import { AddEmployeeModal } from "@/components/modals/add-employee-modal";
+import { AddCategoryModal } from "@/components/modals/add-category-modal";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -275,8 +276,10 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const departments = departmentsData || [];
   const { data: employeesData } = useEmployees();
   const employees = employeesData || [];
-  // Mock State for Categories
-  const [categories, setCategories] = useState<any[]>([]);
+  // Categories Data
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData || [];
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
 
   // Mock State for Assets List
   const { data: assetsData } = useAssetsList();
@@ -753,7 +756,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <button onClick={() => { setActiveTab("Employees"); triggerToast("Employee form opened", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
             Add Employee
           </button>
-          <button onClick={() => { setActiveTab("Categories"); triggerToast("Create Category form opened", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
+          <button onClick={() => { setIsAddCategoryModalOpen(true); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
             Create Category
           </button>
           <button onClick={() => { setActiveTab("Audits"); triggerToast("Audit scope screen loaded", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
@@ -942,7 +945,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               <p className="text-xs text-neutral-400 mt-0.5 font-medium">Pending corporate compliance reviews</p>
             </div>
             <div className="space-y-4 mt-2">
-              {auditsList.map((audit, idx) => (
+              {auditsList.map((audit: any, idx: number) => (
                 <div key={idx} className="flex items-start justify-between border-b border-neutral-50 pb-3 last:border-0 last:pb-0">
                   <div>
                     <h4 className="text-xs font-semibold text-neutral-900">{audit.name}</h4>
@@ -1177,7 +1180,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Asset Categories</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Configure classification ledgers, warranty thresholds, and custom checklists</p>
         </div>
-        <button onClick={() => triggerToast("Add Category screen opened", "success")} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+        <button onClick={() => setIsAddCategoryModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
           Create Category
         </button>
       </div>
@@ -1369,7 +1372,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             </TableRow>
           </TableHeader>
           <TableBody>
-            {auditsList.map((audit) => (
+            {auditsList.map((audit: any) => (
               <TableRow key={audit.id} className="border-neutral-100 hover:bg-neutral-50/50 cursor-pointer" onClick={() => { setSelectedItem({ type: "audit", data: audit }); setDrawerTab("Overview"); setIsDrawerOpen(true); }}>
                 <TableCell className="py-4 text-xs font-bold text-neutral-900">{audit.name}</TableCell>
                 <TableCell className="py-4 text-xs font-medium text-neutral-500">{audit.department}</TableCell>
@@ -1969,3 +1972,4 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
     </div>
   );
 }
+
