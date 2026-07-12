@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { useDeptOverview, useApproveMutation, useRejectMutation, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
+import { useDeptOverview, useApproveMutation, useRejectMutation, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -21,6 +21,7 @@ import {
   Download01Icon,
   ClipboardListIcon,
   Audit01Icon,
+  Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Table,
@@ -139,6 +140,12 @@ const MiniBar = ({ data }: { data: { label: string; value: number; max: number }
 export function DeptHeadDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
+
+  const { data: currentUser } = useCurrentUser();
+  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : DEPT_HEAD.name;
+  const userInitials = currentUser
+    ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase()
+    : DEPT_HEAD.initials;
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -509,10 +516,10 @@ export function DeptHeadDashboard() {
         {/* Dept header card */}
         <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-neutral-950 text-white font-extrabold text-lg flex items-center justify-center shrink-0">{DEPT_HEAD.initials}</div>
+            <div className="w-12 h-12 rounded-xl bg-neutral-950 text-white font-extrabold text-lg flex items-center justify-center shrink-0">{userInitials}</div>
             <div>
               <h2 className="text-sm font-extrabold text-neutral-900">{DEPT_HEAD.dept} Department</h2>
-              <p className="text-[11px] text-neutral-500 font-medium mt-0.5">Head: {DEPT_HEAD.name} · {DEPT_HEAD.employees} Employees</p>
+              <p className="text-[11px] text-neutral-500 font-medium mt-0.5">Head: {userName} · {DEPT_HEAD.employees} Employees</p>
             </div>
           </div>
           <p className="text-[10px] text-neutral-400 font-semibold">Updated: {DEPT_HEAD.lastUpdated}</p>
@@ -1142,11 +1149,11 @@ export function DeptHeadDashboard() {
     return (
       <div className="space-y-6 max-w-2xl">
         <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col md:flex-row gap-6 items-center">
-          <div className="w-16 h-16 rounded-xl bg-neutral-950 text-white font-extrabold text-2xl flex items-center justify-center shrink-0">{DEPT_HEAD.initials}</div>
+          <div className="w-16 h-16 rounded-xl bg-neutral-950 text-white font-extrabold text-2xl flex items-center justify-center shrink-0">{userInitials}</div>
           <div className="flex-1 space-y-1 text-center md:text-left">
-            <h3 className="text-base font-extrabold text-neutral-900">{DEPT_HEAD.name}</h3>
+            <h3 className="text-base font-extrabold text-neutral-900">{userName}</h3>
             <p className="text-xs text-neutral-500 font-medium">{DEPT_HEAD.position} · {DEPT_HEAD.dept}</p>
-            <p className="text-[10px] text-neutral-400 mt-1">{DEPT_HEAD.email} · {DEPT_HEAD.phone}</p>
+            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email || DEPT_HEAD.email} · {DEPT_HEAD.phone}</p>
             <p className="text-[10px] text-neutral-400">ID: {DEPT_HEAD.id}</p>
           </div>
         </div>
@@ -1287,18 +1294,31 @@ export function DeptHeadDashboard() {
           })}
         </div>
 
-        {/* Bottom profile tag */}
-        {isSidebarOpen && (
-          <div className="p-4 border-t border-neutral-100 shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-neutral-950 text-white font-bold text-[9px] flex items-center justify-center">{DEPT_HEAD.initials}</div>
-              <div>
-                <p className="text-[10px] font-bold text-neutral-700 truncate leading-none">{DEPT_HEAD.name}</p>
+        {/* Sign Out + profile */}
+        <div className="p-3 border-t border-neutral-100 shrink-0 space-y-2">
+          <button
+            onClick={async () => {
+              try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+              window.location.href = "/login-in";
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-red-600 hover:text-red-700 hover:bg-red-50/50 group"
+          >
+            <div className="text-red-500 group-hover:text-red-600 shrink-0">
+              <HugeiconsIcon icon={Logout01Icon} size={18} />
+            </div>
+            {isSidebarOpen && <span className="text-sm font-semibold">Sign Out</span>}
+          </button>
+
+          <div className="flex items-center gap-2 px-1">
+            <div className="w-6 h-6 rounded-full bg-neutral-950 text-white font-bold text-[9px] flex items-center justify-center shrink-0">{userInitials}</div>
+            {isSidebarOpen && (
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-neutral-700 truncate leading-none">{userName}</p>
                 <p className="text-[9px] text-neutral-400 mt-0.5">{DEPT_HEAD.position}</p>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </motion.div>
 
       {/* ── Main ────────────────────────────────────────────────── */}
@@ -1328,11 +1348,11 @@ export function DeptHeadDashboard() {
 
             <div className="h-8 w-px bg-neutral-200" />
 
-            {/* Static identity */}
+            {/* Dynamic identity */}
             <div className="flex items-center gap-2 px-2 py-1">
-              <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold">{DEPT_HEAD.initials}</div>
+              <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold">{userInitials}</div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-bold text-neutral-900 leading-none">{DEPT_HEAD.name}</span>
+                <span className="text-[11px] font-bold text-neutral-900 leading-none">{userName}</span>
                 <span className="text-[9px] font-medium text-neutral-400 mt-0.5 leading-none">{DEPT_HEAD.position}</span>
               </div>
             </div>

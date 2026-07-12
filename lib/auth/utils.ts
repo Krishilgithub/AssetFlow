@@ -34,6 +34,7 @@ export const signupSchema = z.object({
     .regex(/[A-Z]/, 'Must contain uppercase')
     .regex(/[a-z]/, 'Must contain lowercase')
     .regex(/[0-9]/, 'Must contain number'),
+  role: z.enum(['Admin', 'Employee']).optional(),
   terms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms',
   }),

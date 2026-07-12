@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -266,6 +266,10 @@ const CustomHeatmap = () => {
 export function DashboardSection({ initialRole = "Admin" }: { initialRole?: string }) {
   const { data: kpis } = useDashboardKPIs();
   const { data: chartsData } = useDashboardCharts();
+  const { data: currentUser } = useCurrentUser();
+
+  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : (initialRole === "Admin" ? "Alex Dupont" : "Priya Shah");
+  const userInitials = currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() : (initialRole === "Admin" ? "AD" : "PS");
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -1856,7 +1860,10 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
 
           {/* Sign Out link */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+              } catch {}
               window.location.href = "/login-in";
             }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-red-600 hover:text-red-700 hover:bg-red-50/50 group"
@@ -1872,12 +1879,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           {/* User profile representation */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-neutral-200 border border-neutral-300 flex items-center justify-center font-bold text-neutral-700 shrink-0 text-sm">
-              AD
+              {userInitials}
             </div>
             {isSidebarOpen && (
               <div className="overflow-hidden">
-                <p className="text-sm font-semibold truncate leading-none mb-1">Alex Dupont</p>
-                <p className="text-xs text-neutral-400 truncate">Workspace Admin</p>
+                <p className="text-sm font-semibold truncate leading-none mb-1">{userName}</p>
+                <p className="text-xs text-neutral-400 truncate">{initialRole === "Admin" ? "Workspace Admin" : "Asset Manager"}</p>
               </div>
             )}
           </div>
@@ -1914,9 +1921,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             <div className="h-8 w-px bg-neutral-200"></div>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold uppercase">
-                AD
+                {userInitials}
               </div>
-              <span className="text-xs font-semibold text-neutral-600">Workspace Admin</span>
+              <span className="text-xs font-semibold text-neutral-600">{initialRole === "Admin" ? "Workspace Admin" : "Asset Manager"}</span>
             </div>
           </div>
         </header>

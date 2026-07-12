@@ -303,3 +303,14 @@ export async function downloadReport(format: 'assets' | 'allocations' | 'transfe
   window.URL.revokeObjectURL(url);
 }
 
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/auth/me');
+      return data.user;
+    },
+    retry: false,
+  });
+}
+

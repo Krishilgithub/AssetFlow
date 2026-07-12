@@ -76,7 +76,7 @@ export default function LandingPage() {
             ))}
             <hr className="border-neutral-100" />
             <Link href="/login-in" className="py-1 hover:text-neutral-900">Login</Link>
-            <Link href="/dashboard" className="px-4 py-2 text-center font-bold bg-neutral-950 text-white rounded-xl">Sign up</Link>
+            <Link href="/sign-up" className="px-4 py-2 text-center font-bold bg-neutral-950 text-white rounded-xl">Sign up</Link>
           </div>
         )}
       </div>

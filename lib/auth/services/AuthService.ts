@@ -32,7 +32,13 @@ export class AuthService {
       },
     });
 
-    const role = await this.getEmployeeRole();
+    const roleName = data.role === 'Admin' ? 'Admin' : 'Employee';
+    let role = await prisma.roles.findFirst({ where: { name: roleName } });
+    if (!role) {
+      role = await prisma.roles.create({
+        data: { name: roleName, description: `${roleName} role` }
+      });
+    }
     await prisma.user_roles.create({
       data: { user_id: user.id, role_id: role.id }
     });

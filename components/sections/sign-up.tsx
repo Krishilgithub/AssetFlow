@@ -25,7 +25,8 @@ export function SignUpSection() {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'Employee' as 'Admin' | 'Employee'
   });
   const [otp, setOtp] = useState('');
 
@@ -80,8 +81,28 @@ export function SignUpSection() {
       if (!res.ok) {
         toast.error(data.error || "Invalid OTP");
       } else {
-        toast.success("Account verified! You can now log in.");
-        setTimeout(() => router.push('/login-in'), 2000);
+        toast.success("Account verified! Logging you in...");
+        // Auto-login after verification
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, password: formData.password })
+        });
+        const loginData = await loginRes.json();
+        if (loginRes.ok) {
+          const role = loginData.user?.role || 'Employee';
+          if (role === 'Admin') {
+            router.push('/dashboard/admin');
+          } else if (role === 'Asset Manager') {
+            router.push('/dashboard/asset-manager');
+          } else if (role === 'Department Head') {
+            router.push('/dashboard/department-head');
+          } else {
+            router.push('/dashboard/employee');
+          }
+        } else {
+          router.push('/login-in');
+        }
       }
     } catch (err) {
       toast.error("An error occurred");
@@ -102,7 +123,16 @@ export function SignUpSection() {
         const data = await res.json();
         if (res.ok) {
            toast.success("Logged in successfully!");
-           router.push('/dashboard');
+           const role = data.user?.role || 'Employee';
+           if (role === 'Admin') {
+             router.push('/dashboard/admin');
+           } else if (role === 'Asset Manager') {
+             router.push('/dashboard/asset-manager');
+           } else if (role === 'Department Head') {
+             router.push('/dashboard/department-head');
+           } else {
+             router.push('/dashboard/employee');
+           }
         } else {
            toast.error(data.error || "Google login failed");
         }
@@ -161,6 +191,34 @@ export function SignUpSection() {
           {!isOtpStep ? (
             <>
               <form className="space-y-5" onSubmit={handleSignup}>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-900">Select role</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, role: 'Employee' }))}
+                      className={`py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                        formData.role === 'Employee'
+                          ? 'border-neutral-900 bg-neutral-950 text-white shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Employee
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, role: 'Admin' }))}
+                      className={`py-2.5 rounded-xl border text-sm font-bold transition-all ${
+                        formData.role === 'Admin'
+                          ? 'border-neutral-900 bg-neutral-950 text-white shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Admin
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-900">First name</label>

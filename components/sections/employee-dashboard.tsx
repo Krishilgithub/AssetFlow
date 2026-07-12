@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
+import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -23,6 +23,7 @@ import {
   ClipboardListIcon,
   ArrowUpDownIcon,
   Download01Icon,
+  Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import {
   Table,
@@ -123,6 +124,12 @@ const QrSvg = ({ tag }: { tag: string }) => (
 export function EmployeeDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
+
+  const { data: currentUser } = useCurrentUser();
+  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : EMPLOYEE.name;
+  const userInitials = currentUser
+    ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase()
+    : EMPLOYEE.initials;
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -1192,11 +1199,11 @@ export function EmployeeDashboard() {
       <div className="space-y-6 max-w-2xl">
         {/* Profile Card */}
         <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col md:flex-row gap-6 items-center">
-          <div className="w-16 h-16 rounded-full bg-neutral-950 text-white font-extrabold text-2xl flex items-center justify-center shrink-0">{EMPLOYEE.initials}</div>
+          <div className="w-16 h-16 rounded-full bg-neutral-950 text-white font-extrabold text-2xl flex items-center justify-center shrink-0">{userInitials}</div>
           <div className="flex-1 space-y-1 text-center md:text-left">
-            <h3 className="text-base font-extrabold text-neutral-900">{EMPLOYEE.name}</h3>
+            <h3 className="text-base font-extrabold text-neutral-900">{userName}</h3>
             <p className="text-xs text-neutral-500 font-medium">{EMPLOYEE.id} · {EMPLOYEE.dept}</p>
-            <p className="text-[10px] text-neutral-400 mt-1">{EMPLOYEE.email} · {EMPLOYEE.phone}</p>
+            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email || EMPLOYEE.email} · {EMPLOYEE.phone}</p>
             <p className="text-[10px] text-neutral-400">Joined: {EMPLOYEE.joined}</p>
           </div>
         </div>
@@ -1366,18 +1373,31 @@ export function EmployeeDashboard() {
           })}
         </div>
 
-        {/* Role tag at bottom */}
-        {isSidebarOpen && (
-          <div className="p-4 border-t border-neutral-100">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-neutral-200 text-neutral-600 font-bold text-[9px] flex items-center justify-center">{EMPLOYEE.initials}</div>
-              <div>
-                <p className="text-[10px] font-bold text-neutral-700 truncate leading-none">{EMPLOYEE.name}</p>
+        {/* Sign Out + profile */}
+        <div className="p-3 border-t border-neutral-100 space-y-2">
+          <button
+            onClick={async () => {
+              try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+              window.location.href = "/login-in";
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-red-600 hover:text-red-700 hover:bg-red-50/50 group"
+          >
+            <div className="text-red-500 group-hover:text-red-600 shrink-0">
+              <HugeiconsIcon icon={Logout01Icon} size={18} />
+            </div>
+            {isSidebarOpen && <span className="text-sm font-semibold">Sign Out</span>}
+          </button>
+
+          <div className="flex items-center gap-2 px-1">
+            <div className="w-7 h-7 rounded-full bg-neutral-200 text-neutral-600 font-bold text-[9px] flex items-center justify-center shrink-0">{userInitials}</div>
+            {isSidebarOpen && (
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-neutral-700 truncate leading-none">{userName}</p>
                 <p className="text-[9px] text-neutral-400 mt-0.5">Employee</p>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </motion.div>
 
       {/* Main area */}
@@ -1408,9 +1428,9 @@ export function EmployeeDashboard() {
 
             {/* Profile display — read-only */}
             <div className="flex items-center gap-2 px-2 py-1">
-                <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold">{EMPLOYEE.initials}</div>
+                <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold">{userInitials}</div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[11px] font-bold text-neutral-900 leading-none">{EMPLOYEE.name}</span>
+                  <span className="text-[11px] font-bold text-neutral-900 leading-none">{userName}</span>
                   <span className="text-[9px] text-neutral-400 mt-0.5">Employee</span>
                 </div>
               </div>

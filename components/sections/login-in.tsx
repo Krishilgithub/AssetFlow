@@ -39,8 +39,16 @@ export function LoginSection() {
         toast.error(data.error || "Login failed");
       } else {
         toast.success("Welcome back!");
-        // We set cookie on backend. Just route to dashboard.
-        router.push('/dashboard');
+        const role = data.user?.role || 'Employee';
+        if (role === 'Admin') {
+          router.push('/dashboard/admin');
+        } else if (role === 'Asset Manager') {
+          router.push('/dashboard/asset-manager');
+        } else if (role === 'Department Head') {
+          router.push('/dashboard/department-head');
+        } else {
+          router.push('/dashboard/employee');
+        }
       }
     } catch (err) {
       toast.error("An error occurred");
@@ -61,7 +69,16 @@ export function LoginSection() {
         const data = await res.json();
         if (res.ok) {
            toast.success("Logged in successfully!");
-           router.push('/dashboard');
+           const role = data.user?.role || 'Employee';
+           if (role === 'Admin') {
+             router.push('/dashboard/admin');
+           } else if (role === 'Asset Manager') {
+             router.push('/dashboard/asset-manager');
+           } else if (role === 'Department Head') {
+             router.push('/dashboard/department-head');
+           } else {
+             router.push('/dashboard/employee');
+           }
         } else {
            toast.error(data.error || "Google login failed");
         }
