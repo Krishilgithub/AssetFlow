@@ -200,6 +200,9 @@ export function useApproveMutation(target: 'transfers' | 'returns' | 'maintenanc
 /**
  * Mutation helper for rejecting a dept-scoped request
  */
+/**
+ * Mutation helper for rejecting a dept-scoped request
+ */
 export function useRejectMutation(target: 'transfers' | 'maintenance') {
   const queryClient = useQueryClient();
   return useMutation({
@@ -212,3 +215,91 @@ export function useRejectMutation(target: 'transfers' | 'maintenance') {
     },
   });
 }
+
+// ─── Notifications Hooks ──────────────────────────────────────────────────────
+
+/**
+ * Fetch the current user's notifications
+ */
+export function useMyNotifications() {
+  return useQuery<any[]>({
+    queryKey: ['myNotifications'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/me/notifications');
+      return data;
+    },
+    refetchInterval: 30000, // auto-refresh every 30s
+  });
+}
+
+/**
+ * Mark a single notification as read
+ */
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await axios.patch(`/api/me/notifications/${id}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myNotifications'] });
+    },
+  });
+}
+
+/**
+ * Mark all notifications as read
+ */
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await axios.patch('/api/me/notifications/read-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myNotifications'] });
+    },
+  });
+}
+
+/**
+ * Clear (delete) all notifications
+ */
+export function useClearNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await axios.delete('/api/me/notifications');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myNotifications'] });
+    },
+  });
+}
+
+// ─── Report Export Utility ────────────────────────────────────────────────────
+
+/**
+ * Trigger a CSV download for a given report type.
+ * Usage: downloadReport('assets') or downloadReport('transfers', deptId)
+ */
+export async function downloadReport(format: 'assets' | 'allocations' | 'transfers' | 'maintenance', deptId?: string) {
+  const params = new URLSearchParams({ format });
+  if (deptId) params.set('deptId', deptId);
+
+  const response = await axios.get(`/api/reports/export?${params.toString()}`, {
+    responseType: 'blob',
+  });
+
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  const disposition = response.headers['content-disposition'] || '';
+  const match = disposition.match(/filename="(.+?)"/);
+  link.setAttribute('download', match ? match[1] : `${format}-report.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { useDeptOverview, useApproveMutation, useRejectMutation } from "@/lib/hooks/useDashboard";
+import { useDeptOverview, useApproveMutation, useRejectMutation, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -178,7 +178,11 @@ export function DeptHeadDashboard() {
     const approveReturnMut = useApproveMutation("returns");
 
   // ─── Notifications ──────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { data: notificationsData } = useMyNotifications();
+    const notifications = notificationsData || [];
+    const markAllReadMut = useMarkAllNotificationsRead();
+  const clearNotifsMut = useClearNotifications();
+  const markReadMut = useMarkNotificationRead();
 
   // ─── Reports ────────────────────────────────────────────────────────────
   const reports: any[] = deptData?.reports || [];
@@ -1021,7 +1025,7 @@ export function DeptHeadDashboard() {
               </div>
               <div className="flex gap-2 flex-wrap">
                 {["CSV", "Excel", "PDF"].map(fmt => (
-                  <button key={fmt} onClick={() => triggerToast(`${r.title} exported as ${fmt}`, "success")} className="px-3 py-1 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-lg flex items-center gap-1">
+                  <button key={fmt} onClick={async () => { try { const map: Record<string, any> = { 'Department Asset Report': 'assets', 'Employee Asset Report': 'allocations', 'Maintenance Report': 'maintenance', 'Transfer Report': 'transfers' }; const key = map[r.title]; if (key && fmt === 'CSV') { await downloadReport(key, deptInfo?.id); triggerToast(`${r.title} downloaded!`, 'success'); } else { triggerToast(`${fmt} export coming soon`, 'success'); } } catch (e: any) { triggerToast(e.message, 'error'); } }} className="px-3 py-1 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-lg flex items-center gap-1">
                     <HugeiconsIcon icon={Download01Icon} size={10} />{fmt}
                   </button>
                 ))}
@@ -1069,7 +1073,7 @@ export function DeptHeadDashboard() {
   // ───────────────────────────────────────────────────────────────
   const renderNotifications = () => {
     const tabs = ["All", "Transfers", "Maintenance", "Bookings", "Assets", "Unread"];
-    const filtered = notifications.filter(n => {
+    const filtered = notifications.filter((n: any) => {
       if (notifTab === "All") return true;
       if (notifTab === "Unread") return !n.read;
       return n.category === notifTab;
@@ -1080,11 +1084,11 @@ export function DeptHeadDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-neutral-900">Notifications</h3>
-            <p className="text-xs text-neutral-400 mt-0.5 font-medium">{notifications.filter(n => !n.read).length} unread</p>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">{notifications.filter((n: any) => !n.read).length} unread</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => { setNotifications(p => p.map(n => ({ ...n, read: true }))); triggerToast("All marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
-            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { setNotifications([]); triggerToast("Cleared", "success"); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
+            <button onClick={() => { markAllReadMut.mutate(undefined, { onSuccess: () => triggerToast("All marked as read", "success") }); triggerToast("All marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
+            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { clearNotifsMut.mutate(); triggerToast("Cleared", "success"); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
           </div>
         </div>
 
@@ -1107,8 +1111,8 @@ export function DeptHeadDashboard() {
                 <p className="text-[9px] text-neutral-400 font-semibold mt-1">{n.timestamp}</p>
               </div>
               <div className="flex gap-1.5 ml-3 shrink-0">
-                {!n.read && <button onClick={() => setNotifications(p => p.map(x => x.id === n.id ? { ...x, read: true } : x))} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
-                <button onClick={() => setConfirmModal({ isOpen: true, title: "Delete Notification?", description: `Delete "${n.title}"?`, onConfirm: () => setNotifications(p => p.filter(x => x.id !== n.id)) })} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
+                {!n.read && <button onClick={() => markReadMut?.mutate(n.id)} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
+                <button onClick={() => clearNotifsMut.mutate()} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
               </div>
             </div>
           ))}
@@ -1359,5 +1363,6 @@ export function DeptHeadDashboard() {
     </div>
   );
 }
+
 
 

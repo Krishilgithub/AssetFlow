@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns } from "@/lib/hooks/useDashboard";
+import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -180,7 +180,11 @@ export function EmployeeDashboard() {
   const [returnForm, setReturnForm] = useState({ assetId: "", reason: "", condition: "Good", notes: "" });
 
   // ─── Notifications State ──────────────────────────────────────────
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { data: notificationsData, refetch: refetchNotifs } = useMyNotifications();
+    const notifications = notificationsData || [];
+    const markReadMut = useMarkNotificationRead();
+    const markAllReadMut = useMarkAllNotificationsRead();
+    const clearNotifsMut = useClearNotifications();
 
   // ─────────────────────────────────────────────────────────────────
   // RENDER HELPERS
@@ -1125,8 +1129,8 @@ export function EmployeeDashboard() {
             <p className="text-xs text-neutral-400 mt-0.5 font-medium">{notifications.filter((n: any) => !n.read).length} unread notifications</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => { setNotifications((prev: any) => prev.map((n: any) => ({ ...n, read: true }))); triggerToast("All marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
-            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { setNotifications([]); triggerToast("Notifications cleared", "success"); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
+            <button onClick={() => { markAllReadMut.mutate(undefined, { onSuccess: () => triggerToast("All marked as read", "success") }); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
+            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { clearNotifsMut.mutate(undefined, { onSuccess: () => triggerToast("Notifications cleared", "success") }); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
           </div>
         </div>
 
@@ -1139,7 +1143,7 @@ export function EmployeeDashboard() {
 
         {/* Notification list */}
         <div className="space-y-3">
-          {filtered.map(notif => (
+          {filtered.map((notif: any) => (
             <div key={notif.id} className={`flex items-start justify-between p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB] ${!notif.read ? "border-l-4 border-l-black" : ""}`}>
               <div className="space-y-1 flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1151,8 +1155,8 @@ export function EmployeeDashboard() {
                 <p className="text-[9px] text-neutral-400 font-semibold mt-1">{notif.timestamp}</p>
               </div>
               <div className="flex gap-1.5 ml-3 shrink-0">
-                {!notif.read && <button onClick={() => setNotifications((prev: any) => prev.map((n: any) => n.id === notif.id ? { ...n, read: true } : n))} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
-                <button onClick={() => setConfirmModal({ isOpen: true, title: "Delete Notification?", description: `Delete "${notif.title}"?`, onConfirm: () => setNotifications((prev: any) => prev.filter((n: any) => n.id !== notif.id)) })} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
+                {!notif.read && <button onClick={() => markReadMut.mutate(notif.id)} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
+                <button onClick={() => setConfirmModal({ isOpen: true, title: "Delete Notification?", description: `Delete "${notif.title}"?`, onConfirm: () => { clearNotifsMut.mutate(); } })} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
               </div>
             </div>
           ))}

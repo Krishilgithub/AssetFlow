@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { NotificationService } from '@/lib/services/NotificationService';
 
 export const approveTransferSchema = z.object({
   notes: z.string().optional()
@@ -166,6 +167,17 @@ export class DepartmentHeadService {
 
       return transfer;
     });
+
+    // Notify the requester (fire-and-forget, outside transaction)
+    const fullTransfer = await prisma.asset_transfers.findUnique({ where: { id: transferId } });
+    if (fullTransfer != null) {
+      const asset = await prisma.assets.findUnique({ where: { id: fullTransfer!.asset_id }, select: { name: true } });
+      await NotificationService.create(fullTransfer!.requested_by, {
+        title: 'Transfer Approved ✅',
+        message: `Your transfer request for ${asset?.name ?? 'an asset'} has been approved.`,
+        type: 'approval'
+      });
+    }
   }
 
   /**
@@ -193,6 +205,17 @@ export class DepartmentHeadService {
 
       return transfer;
     });
+
+    // Notify the requester
+    const fullTransfer = await prisma.asset_transfers.findUnique({ where: { id: transferId } });
+    if (fullTransfer != null) {
+      const asset = await prisma.assets.findUnique({ where: { id: fullTransfer!.asset_id }, select: { name: true } });
+      await NotificationService.create(fullTransfer!.requested_by, {
+        title: 'Transfer Rejected ❌',
+        message: `Your transfer request for ${asset?.name ?? 'an asset'} was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+        type: 'rejection'
+      });
+    }
   }
 
   /**
@@ -251,6 +274,16 @@ export class DepartmentHeadService {
 
       return record;
     });
+
+    // Notify the reporter
+    const maint = await prisma.asset_maintenances.findUnique({ where: { id: maintenanceId }, include: { assets: { select: { name: true } } } });
+    if (maint != null) {
+      await NotificationService.create(maint!.reported_by, {
+        title: 'Maintenance Approved ✅',
+        message: `Your maintenance request for ${maint!.assets?.name ?? 'an asset'} has been approved and is now In Progress.`,
+        type: 'approval'
+      });
+    }
   }
 
   /**
@@ -275,6 +308,16 @@ export class DepartmentHeadService {
 
       return record;
     });
+
+    // Notify the reporter
+    const maint = await prisma.asset_maintenances.findUnique({ where: { id: maintenanceId }, include: { assets: { select: { name: true } } } });
+    if (maint != null) {
+      await NotificationService.create(maint!.reported_by, {
+        title: 'Maintenance Rejected ❌',
+        message: `Your maintenance request for ${maint!.assets?.name ?? 'an asset'} was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+        type: 'rejection'
+      });
+    }
   }
 
   /**
@@ -307,6 +350,16 @@ export class DepartmentHeadService {
 
       return allocation;
     });
+
+    // Notify the employee
+    const alloc = await prisma.asset_allocations.findUnique({ where: { id: allocationId }, include: { assets: { select: { name: true } } } });
+    if (alloc != null) {
+      await NotificationService.create(alloc!.allocated_to, {
+        title: 'Return Processed ✅',
+        message: `Your return of ${alloc!.assets?.name ?? 'an asset'} has been processed successfully.`,
+        type: 'approval'
+      });
+    }
   }
 
   /**
@@ -421,3 +474,5 @@ export class DepartmentHeadService {
     return { assets, employees, pendingTransfers, pendingMaint, pendingReturns };
   }
 }
+
+
