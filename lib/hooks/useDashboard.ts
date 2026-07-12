@@ -326,3 +326,14 @@ export async function downloadReport(format: 'assets' | 'allocations' | 'transfe
   window.URL.revokeObjectURL(url);
 }
 
+export function useMyProfile() {
+  return useQuery({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/me/profile');
+      return data;
+    }
+  });
+}
+
+

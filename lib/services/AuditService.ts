@@ -30,7 +30,7 @@ export class AuditService {
     }));
   }
 
-  static async createAudit(data: z.infer<typeof createAuditSchema>, currentUserId: string) {
+  static async createAudit(data: z.infer<typeof createAuditSchema>, currentUserId?: string | null) {
     const audit = await prisma.asset_audits.create({
       data: {
         name: data.name,

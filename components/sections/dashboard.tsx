@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useMyProfile } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -268,6 +268,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const { data: kpis } = useDashboardKPIs();
   const { data: chartsData } = useDashboardCharts();
 
+  const { data: profile } = useMyProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
 
@@ -295,10 +296,28 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const { data: auditsData } = useAudits();
   const auditsList = auditsData || [];
 
-  // Mock State for Pending Approvals
+  // Pending Approvals - normalized from live transfers and allocations
   const pendingApprovals = [
-    ...transfersList.filter((t: any) => t.status === 'Pending').map((t: any) => ({ ...t, type: 'Transfer' })),
-    ...allocationsList.filter((a: any) => a.status === 'Pending Approval').map((a: any) => ({ ...a, type: 'Allocation' }))
+    ...transfersList.filter((t: any) => t.status === 'Pending').map((t: any) => ({
+      id: t.id,
+      type: 'Transfer',
+      title: t.assetName || 'Asset Transfer',
+      details: `${t.fromDept} → ${t.toDept}`,
+      requestedBy: t.requestedBy || 'Unknown',
+      initials: (t.requestedBy || 'U').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+      dept: t.fromDept || '',
+      status: t.status,
+    })),
+    ...allocationsList.filter((a: any) => a.status === 'Pending Approval').map((a: any) => ({
+      id: a.id,
+      type: 'Allocation',
+      title: a.assetName || 'Asset Allocation',
+      details: `Allocate to ${a.allocatedTo}`,
+      requestedBy: a.allocatedBy || 'Unknown',
+      initials: (a.allocatedBy || 'U').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+      dept: '',
+      status: a.status,
+    }))
   ];
 
   // Mock State for Notifications list
@@ -910,6 +929,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                   ))}
                 </TableBody>
               </Table>
+              {pendingApprovals.length === 0 && (
+                <div className="text-center py-8 text-neutral-400">
+                  <p className="text-sm font-semibold">No pending approvals</p>
+                  <p className="text-xs mt-1">All transfer and allocation requests have been settled.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -980,19 +1005,19 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-neutral-100 text-xs">
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">Corporate HQ</h4>
-          <p className="text-neutral-500 mt-2">San Francisco, California</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 124 employees</p>
+          <h4 className="font-bold text-neutral-800">Total Employees</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{employees.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active users in directory</p>
         </div>
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">London Office</h4>
-          <p className="text-neutral-500 mt-2">London, United Kingdom</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 22 employees</p>
+          <h4 className="font-bold text-neutral-800">Departments</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{departments.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active organizational units</p>
         </div>
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">APAC Operations Center</h4>
-          <p className="text-neutral-500 mt-2">Singapore Hub</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 12 employees</p>
+          <h4 className="font-bold text-neutral-800">Total Assets</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{kpis?.totalAssets ?? assetsList.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Registered in inventory</p>
         </div>
       </div>
     </div>
@@ -1085,6 +1110,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             ))}
           </TableBody>
         </Table>
+        {departments.filter((d) => (statusFilter === "All" || d.status === statusFilter) && d.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          <div className="text-center py-8 text-neutral-400">
+            <p className="text-sm font-semibold">No departments found</p>
+            <p className="text-xs mt-1">{searchQuery ? 'Try a different search term.' : 'Add your first department to get started.'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1166,6 +1197,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             ))}
           </TableBody>
         </Table>
+        {employees.filter((e) => (deptFilter === "All" || e.dept === deptFilter) && (roleFilter === "All" || e.role === roleFilter) && e.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          <div className="text-center py-8 text-neutral-400">
+            <p className="text-sm font-semibold">No employees found</p>
+            <p className="text-xs mt-1">{searchQuery ? 'Try a different search term.' : 'Add your first employee to get started.'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1871,12 +1908,16 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           {/* User profile representation */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-neutral-200 border border-neutral-300 flex items-center justify-center font-bold text-neutral-700 shrink-0 text-sm">
-              AD
+              {profile ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase() || 'U' : 'AD'}
             </div>
             {isSidebarOpen && (
               <div className="overflow-hidden">
-                <p className="text-sm font-semibold truncate leading-none mb-1">Alex Dupont</p>
-                <p className="text-xs text-neutral-400 truncate">Workspace Admin</p>
+                <p className="text-sm font-semibold truncate leading-none mb-1">
+                  {profile ? `${profile.firstName} ${profile.lastName}` : 'Alex Dupont'}
+                </p>
+                <p className="text-xs text-neutral-400 truncate">
+                  {profile ? profile.role : 'Workspace Admin'}
+                </p>
               </div>
             )}
           </div>
@@ -1913,9 +1954,11 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             <div className="h-8 w-px bg-neutral-200"></div>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold uppercase">
-                AD
+                {profile ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase() || 'U' : 'AD'}
               </div>
-              <span className="text-xs font-semibold text-neutral-600">Workspace Admin</span>
+              <span className="text-xs font-semibold text-neutral-600">
+                {profile ? profile.role : 'Workspace Admin'}
+              </span>
             </div>
           </div>
         </header>
