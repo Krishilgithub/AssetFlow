@@ -262,6 +262,63 @@ const CustomHeatmap = () => {
 export function DashboardSection() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
+  const [currentRole, setCurrentRole] = useState<"Admin" | "Asset Manager">("Admin");
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [registerStep, setRegisterStep] = useState(1);
+
+  // Form input states
+  const [newAssetData, setNewAssetData] = useState({
+    name: "",
+    category: "IT Hardware",
+    assetTag: "",
+    serialNumber: "",
+    description: "",
+    purchaseDate: "2026-07-12",
+    purchaseCost: "",
+    vendor: "",
+    warrantyPeriod: "36 Months",
+    warrantyExpiry: "2029-07-12",
+    department: "Engineering",
+    building: "Main HQ",
+    floor: "Floor 2",
+    room: "Room 204",
+    storageLocation: "Shelf C-1",
+    notes: "",
+  });
+
+  const [newAllocationData, setNewAllocationData] = useState({
+    assetId: "",
+    employeeId: "",
+    allocatedOn: "2026-07-12",
+    expectedReturn: "2027-07-12",
+    remarks: "",
+  });
+
+  // Allocations state
+  const [allocations, setAllocations] = useState([
+    { id: "ALC-01", assetId: "AST-0010", assetName: "MacBook Pro 16\" M3 Max", employeeId: "EMP-107", employeeName: "Aria Thorne", department: "Engineering", allocatedOn: "Jan 15, 2026", expectedReturn: "Jan 15, 2027", status: "Active" },
+    { id: "ALC-02", assetId: "AST-0114", assetName: "Dell UltraSharp 32\" 4K", employeeId: "EMP-102", employeeName: "Marcus Vance", department: "Engineering", allocatedOn: "Feb 18, 2026", expectedReturn: "Feb 18, 2027", status: "Active" },
+    { id: "ALC-03", assetId: "AST-0552", assetName: "iPad Pro 12.9\" M2", employeeId: "EMP-103", employeeName: "Emily Rogers", department: "Finance", allocatedOn: "Jul 22, 2025", expectedReturn: "Jul 22, 2026", status: "Overdue" },
+  ]);
+
+  // Transfers state
+  const [transfers, setTransfers] = useState([
+    { id: "TRF-01", assetId: "AST-0010", assetName: "MacBook Pro 16\" M3 Max", fromUser: "Priya Shah", toUser: "Marcus Vance", requestedBy: "Priya Shah", status: "Pending", date: "Jul 05, 2026", reason: "Division upgrade requirements" },
+    { id: "TRF-02", assetId: "AST-0114", assetName: "Dell UltraSharp 32\" 4K", fromUser: "Marcus Vance", toUser: "Aria Thorne", requestedBy: "Marcus Vance", status: "Approved", date: "Jun 12, 2026", reason: "Project desk rearrangement" },
+  ]);
+
+  // Maintenance tickets state
+  const [maintenance, setMaintenance] = useState([
+    { id: "MNT-01", assetId: "AST-0010", assetName: "MacBook Pro 16\" M3 Max", issue: "Keyboard keys sticky", priority: "High", raisedBy: "Priya Shah", technician: "Sarah Connor", status: "In Progress", cost: "$120", date: "Jul 10, 2026" },
+    { id: "MNT-02", assetId: "AST-0552", assetName: "iPad Pro 12.9\" M2", issue: "Cracked screen glass replacement", priority: "Critical", raisedBy: "Emily Rogers", technician: "Dave Miller", status: "Pending", cost: "$250", date: "Jul 11, 2026" },
+    { id: "MNT-03", assetId: "AST-0114", assetName: "Dell UltraSharp 32\" 4K", issue: "Calibration resets on sleep", priority: "Low", raisedBy: "Marcus Vance", technician: "Self-Service", status: "Resolved", cost: "$0", date: "Jul 08, 2026" },
+  ]);
+
+  // Resource bookings state
+  const [bookings, setBookings] = useState([
+    { id: "BKG-01", resource: "Conference Room Projector 4K", bookedBy: "Marcus Vance", purpose: "Engineering Sprint Review", fromDate: "2026-07-15 10:00", toDate: "2026-07-15 12:00", status: "Active" },
+    { id: "BKG-02", resource: "VR Oculus Headset", bookedBy: "Aria Thorne", purpose: "Visualizing 3D Assets Space", fromDate: "2026-07-16 14:00", toDate: "2026-07-16 17:00", status: "Upcoming" },
+  ]);
 
   // Mock State for Departments
   const [departments, setDepartments] = useState([
@@ -452,6 +509,18 @@ export function DashboardSection() {
     { name: "Settings", icon: Settings01Icon, href: "#" },
   ];
 
+  const assetManagerNavItems = [
+    { name: "All Assets", icon: PackageIcon, href: "#" },
+    { name: "Register Asset", icon: LicenseIcon, href: "#" },
+    { name: "Categories", icon: Folder01Icon, href: "#" },
+    { name: "Allocations", icon: ArrowUpDownIcon, href: "#" },
+    { name: "Transfers", icon: ArrowLeftRightIcon, href: "#" },
+    { name: "Maintenance", icon: ToolsIcon, href: "#" },
+    { name: "Bookings", icon: Calendar01Icon, href: "#" },
+    { name: "Reports", icon: ClipboardListIcon, href: "#" },
+    { name: "Profile", icon: UserMultipleIcon, href: "#" },
+  ];
+
   // Render Success/Error Toast Notifications
   const renderToast = () => {
     if (!toast) return null;
@@ -543,6 +612,16 @@ export function DashboardSection() {
             <>
               <button onClick={() => setDrawerTab("Overview")} className={`py-3 border-b-2 ${drawerTab === "Overview" ? "border-black text-black" : "border-transparent"}`}>Audit Summary</button>
               <button onClick={() => setDrawerTab("Assets")} className={`py-3 border-b-2 ${drawerTab === "Assets" ? "border-black text-black" : "border-transparent"}`}>Covered Assets</button>
+            </>
+          )}
+          {type === "asset" && (
+            <>
+              <button onClick={() => setDrawerTab("Overview")} className={`py-3 border-b-2 ${drawerTab === "Overview" ? "border-black text-black" : "border-transparent"}`}>Overview</button>
+              <button onClick={() => setDrawerTab("Allocation")} className={`py-3 border-b-2 ${drawerTab === "Allocation" ? "border-black text-black" : "border-transparent"}`}>Allocation</button>
+              <button onClick={() => setDrawerTab("Timeline")} className={`py-3 border-b-2 ${drawerTab === "Timeline" ? "border-black text-black" : "border-transparent"}`}>Timeline</button>
+              <button onClick={() => setDrawerTab("Maintenance")} className={`py-3 border-b-2 ${drawerTab === "Maintenance" ? "border-black text-black" : "border-transparent"}`}>Maintenance</button>
+              <button onClick={() => setDrawerTab("Transfers")} className={`py-3 border-b-2 ${drawerTab === "Transfers" ? "border-black text-black" : "border-transparent"}`}>Transfers</button>
+              <button onClick={() => setDrawerTab("QR Code")} className={`py-3 border-b-2 ${drawerTab === "QR Code" ? "border-black text-black" : "border-transparent"}`}>QR Code</button>
             </>
           )}
         </div>
@@ -735,6 +814,139 @@ export function DashboardSection() {
                       <p className="text-xs text-neutral-400 italic">No assets mapped for this audit</p>
                     )}
                   </div>
+                </div>
+              )}
+            </>
+          )}
+          {type === "asset" && (
+            <>
+              {drawerTab === "Overview" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-[#FBFBFB] p-4 border border-neutral-100 rounded-lg space-y-2">
+                    <p className="font-bold text-neutral-900 text-xs">Specification Sheet</p>
+                    <p className="text-neutral-450 mt-1 font-semibold">{data.description || "No descriptions available for this category."}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Category</p>
+                      <p className="font-semibold text-neutral-900 mt-1">{data.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Location Department</p>
+                      <p className="font-semibold text-neutral-900 mt-1">{data.department}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Purchased Date</p>
+                      <p className="font-semibold text-neutral-900 mt-1">{data.purchasedDate || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Warranty Deadline</p>
+                      <p className="font-semibold text-neutral-900 mt-1">{data.warrantyExpiry || "N/A"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {drawerTab === "Allocation" && (
+                <div className="space-y-4 text-xs">
+                  <div className="p-4 border border-neutral-150 rounded-lg space-y-3 bg-[#FBFBFB]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-400 font-bold uppercase text-[9px]">Current Custodian</span>
+                      <span className={`text-[8px] font-bold px-2 py-0.5 rounded uppercase ${
+                        data.status === "Available" ? "bg-emerald-50 text-emerald-700 font-bold" : "bg-neutral-950 text-white"
+                      }`}>{data.status}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-neutral-900 mt-1">{data.custodian || "IT Operations Pool"}</p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">Assigned to: {data.department}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {drawerTab === "Timeline" && (
+                <div className="space-y-4 text-xs">
+                  <p className="font-bold text-neutral-900 text-xs">Asset Activity Logs</p>
+                  <div className="relative pl-6 border-l-2 border-neutral-200 space-y-6">
+                    {[
+                      { title: "Registered in inventory", user: "Dave Miller (IT Ops)", date: "Jan 12, 2026" },
+                      { title: "Allocated to custodian", user: data.custodian || "IT Pool", date: "Feb 18, 2026" },
+                      { title: "Physical barcode audit checklist complete", user: "Priya Shah", date: "Jun 30, 2026" },
+                    ].map((step, i) => (
+                      <div key={i} className="relative">
+                        <span className="absolute -left-[31px] top-1 w-2.5 h-2.5 bg-white border-2 border-black rounded-full" />
+                        <div>
+                          <p className="font-bold text-neutral-950">{step.title}</p>
+                          <p className="text-[10px] text-neutral-450 mt-0.5 font-semibold">By {step.user} • {step.date}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {drawerTab === "Maintenance" && (
+                <div className="space-y-3 text-xs">
+                  <p className="font-bold text-neutral-900 text-xs">Repairs Checklist History</p>
+                  <div className="space-y-2">
+                    {maintenance.filter(m => m.assetId === data.id || m.assetName === data.name).map((m, idx) => (
+                      <div key={idx} className="p-3 border border-neutral-100 rounded-lg flex items-center justify-between bg-neutral-50/50">
+                        <div>
+                          <p className="font-bold text-neutral-900">{m.issue}</p>
+                          <p className="text-[10px] text-neutral-400">Technician: {m.technician} • Cost: {m.cost}</p>
+                        </div>
+                        <span className="text-[8px] font-bold text-neutral-500 uppercase">{m.status}</span>
+                      </div>
+                    ))}
+                    {maintenance.filter(m => m.assetId === data.id || m.assetName === data.name).length === 0 && (
+                      <p className="text-neutral-400 italic text-center py-4">No maintenance tickets registered for this item</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {drawerTab === "Transfers" && (
+                <div className="space-y-3 text-xs">
+                  <p className="font-bold text-neutral-900 text-xs">Custodian Handovers</p>
+                  <div className="space-y-2">
+                    {transfers.filter(t => t.assetId === data.id || t.assetName === data.name).map((t, idx) => (
+                      <div key={idx} className="p-3 border border-neutral-100 rounded-lg space-y-1 bg-neutral-50/50">
+                        <div className="flex justify-between">
+                          <span className="font-bold text-neutral-900">{t.fromUser} → {t.toUser}</span>
+                          <span className="text-[8px] font-bold text-neutral-500 uppercase">{t.status}</span>
+                        </div>
+                        <p className="text-[10px] text-neutral-400">Reason: {t.reason}</p>
+                      </div>
+                    ))}
+                    {transfers.filter(t => t.assetId === data.id || t.assetName === data.name).length === 0 && (
+                      <p className="text-neutral-400 italic text-center py-4">No transfer logs recorded for this item</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {drawerTab === "QR Code" && (
+                <div className="space-y-4 text-xs text-center py-6 flex flex-col items-center">
+                  <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm flex flex-col items-center gap-3">
+                    <svg className="w-32 h-32 text-black" viewBox="0 0 100 100">
+                      <rect x="5" y="5" width="20" height="20" fill="currentColor" />
+                      <rect x="10" y="10" width="10" height="10" fill="white" />
+                      <rect x="75" y="5" width="20" height="20" fill="currentColor" />
+                      <rect x="80" y="10" width="10" height="10" fill="white" />
+                      <rect x="5" y="75" width="20" height="20" fill="currentColor" />
+                      <rect x="10" y="80" width="10" height="10" fill="white" />
+                      <rect x="35" y="15" width="10" height="15" fill="currentColor" />
+                      <rect x="55" y="5" width="10" height="10" fill="currentColor" />
+                      <rect x="40" y="45" width="20" height="20" fill="currentColor" />
+                      <rect x="15" y="40" width="10" height="10" fill="currentColor" />
+                      <rect x="70" y="50" width="15" height="15" fill="currentColor" />
+                      <rect x="50" y="80" width="20" height="10" fill="currentColor" />
+                    </svg>
+                    <span className="text-[9px] font-bold text-neutral-400 bg-neutral-50 px-2 py-0.5 rounded uppercase">AST-TAG: {data.id}</span>
+                  </div>
+                  <button onClick={() => triggerToast("QR code downloaded successfully", "success")} className="px-3.5 py-1.5 font-bold bg-black text-white hover:bg-neutral-800 rounded-lg text-[10px]">
+                    Download QR Code
+                  </button>
                 </div>
               )}
             </>
@@ -1760,6 +1972,1202 @@ export function DashboardSection() {
     </div>
   );
 
+  // ==========================================
+  // ASSET MANAGER RENDER HELPERS
+  // ==========================================
+
+  // 1. Asset Manager Dashboard Page
+  const renderAssetManagerDashboard = () => {
+    const kpis = [
+      { name: "Total Assets", value: assetsList.length + 198, desc: "Across all offices", icon: PackageIcon, color: "text-neutral-900" },
+      { name: "Available Assets", value: 114, desc: "Ready for deployment", icon: AsteriskIcon, color: "text-emerald-600" },
+      { name: "Allocated Assets", value: allocations.filter(a => a.status === "Active").length + 85, desc: "Currently in use", icon: ArrowUpDownIcon, color: "text-neutral-700" },
+      { name: "Under Maintenance", value: maintenance.filter(m => m.status !== "Resolved").length, desc: "Undergoing repairs", icon: ToolsIcon, color: "text-amber-600" },
+      { name: "Reserved Assets", value: bookings.filter(b => b.status === "Upcoming").length, desc: "For upcoming bookings", icon: Calendar01Icon, color: "text-blue-600" },
+      { name: "Due for Return", value: allocations.filter(a => a.status === "Overdue").length, desc: "Requires attention", icon: AlertCircleIcon, color: "text-red-600" },
+      { name: "Pending Maintenance", value: maintenance.filter(m => m.status === "Pending").length, desc: "Requires review", icon: ToolsIcon, color: "text-purple-600" },
+      { name: "Active Bookings", value: bookings.filter(b => b.status === "Active").length, desc: "In use today", icon: CalendarClockIcon, color: "text-indigo-600" },
+    ];
+
+    // Form triggers or mock handlers
+    const quickActions = [
+      { name: "Register Asset", tab: "Register Asset", desc: "Add new item", icon: LicenseIcon },
+      { name: "Allocate Asset", tab: "Allocations", desc: "Deploy equipment", icon: ArrowUpDownIcon },
+      { name: "Create Booking", tab: "Bookings", desc: "Reserve resource", icon: Calendar01Icon },
+      { name: "Raise Maintenance", tab: "Maintenance", desc: "Report hardware issue", icon: ToolsIcon },
+      { name: "View Reports", tab: "Reports", desc: "Export analytics", icon: ClipboardListIcon },
+    ];
+
+    return (
+      <div className="space-y-8">
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {kpis.map((kpi, idx) => (
+            <div key={idx} className="bg-white border border-neutral-200/80 rounded-lg p-5 flex flex-col justify-between shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{kpi.name}</span>
+                <span className={kpi.color}>
+                  <HugeiconsIcon icon={kpi.icon} size={18} />
+                </span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-extrabold text-neutral-900 tracking-tight">{kpi.value}</h3>
+                <p className="text-[10px] text-neutral-450 mt-1 font-semibold">{kpi.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts & Graphs Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pie Distribution & Donut */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between">
+            <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider mb-4">Asset Status Distribution</h3>
+            <div className="flex flex-col md:flex-row items-center justify-around gap-6">
+              <CustomDonutChart
+                data={[
+                  { name: "Allocated", value: 206, color: "#171717" },
+                  { name: "Available", value: 114, color: "#e5e5e5" },
+                  { name: "Maintenance", value: 4, color: "#737373" }
+                ]}
+              />
+              <div className="space-y-2 text-xs w-full max-w-xs">
+                {[
+                  { name: "Allocated", count: "206 items", color: "bg-neutral-950" },
+                  { name: "Available", count: "114 items", color: "bg-neutral-200" },
+                  { name: "Maintenance", count: "4 items", color: "bg-neutral-400" },
+                ].map((st, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-neutral-500 font-medium">
+                      <span className={`w-2.5 h-2.5 rounded-full ${st.color}`} />
+                      <span>{st.name}</span>
+                    </div>
+                    <span className="font-bold text-neutral-900">{st.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Allocation trends (Line Chart representation) */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
+            <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider mb-4">Asset Lifecycle Events</h3>
+            <div className="h-44 w-full flex items-end justify-between gap-2 px-2 pt-4">
+              {[
+                { label: "Feb", allocations: 18, repairs: 3 },
+                { label: "Mar", allocations: 24, repairs: 5 },
+                { label: "Apr", allocations: 32, repairs: 2 },
+                { label: "May", allocations: 15, repairs: 8 },
+                { label: "Jun", allocations: 29, repairs: 4 },
+                { label: "Jul", allocations: 42, repairs: 6 },
+              ].map((trend, idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer relative">
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full bg-neutral-950 text-white text-[9px] font-bold px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 flex flex-col gap-0.5 pointer-events-none">
+                    <span>Deployments: {trend.allocations}</span>
+                    <span>Repairs: {trend.repairs}</span>
+                  </div>
+                  <div className="w-full flex items-end justify-center gap-1.5 h-28">
+                    {/* Allocation bar */}
+                    <div className="bg-black w-2.5 rounded-t-sm transition-all hover:opacity-80" style={{ height: `${(trend.allocations / 50) * 100}%` }} />
+                    {/* Repairs bar */}
+                    <div className="bg-neutral-300 w-2.5 rounded-t-sm transition-all hover:opacity-85" style={{ height: `${(trend.repairs / 50) * 100}%` }} />
+                  </div>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase">{trend.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Operational Split: Activity & Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Asset Activities */}
+          <div className="lg:col-span-2 bg-white border border-neutral-200/80 rounded-lg p-6 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">Recent Asset Activities</h3>
+              <p className="text-[10px] text-neutral-400 mt-1 font-semibold">Real-time log of checkouts, returns, and repairs</p>
+            </div>
+            <div className="overflow-x-auto text-xs">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-neutral-100">
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Asset</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Action</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Employee</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Date</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[
+                    { asset: "MacBook Pro (AST-0010)", action: "Allocation", employee: "Aria Thorne", date: "Jul 12, 2026", status: "Active" },
+                    { asset: "iPhone 15 (AST-0012)", action: "Repair Request", employee: "Marcus Vance", date: "Jul 11, 2026", status: "Pending" },
+                    { asset: "iPad Pro (AST-0552)", action: "Overdue Return", employee: "Emily Rogers", date: "Jul 10, 2026", status: "Flagged" },
+                    { asset: "Sony Camera (AST-1088)", action: "Transfer Complete", employee: "Sarah Jenkins", date: "Jul 08, 2026", status: "Closed" },
+                  ].map((act, i) => (
+                    <tr key={i} className="border-t border-neutral-50 hover:bg-neutral-50/50">
+                      <td className="py-3 font-bold text-neutral-900">{act.asset}</td>
+                      <td className="py-3 font-semibold text-neutral-500">{act.action}</td>
+                      <td className="py-3 font-semibold text-neutral-850">{act.employee}</td>
+                      <td className="py-3 text-neutral-400 font-semibold">{act.date}</td>
+                      <td className="py-3">
+                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          act.status === "Active" ? "bg-emerald-50 text-emerald-700" : act.status === "Pending" ? "bg-amber-50 text-amber-700" : "bg-neutral-100 text-neutral-550"
+                        }`}>
+                          {act.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Quick Actions Panel */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">Quick Console</h3>
+              <div className="flex flex-col gap-3">
+                {quickActions.map((act, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setActiveTab(act.tab);
+                      triggerToast(`${act.name} form loaded`, "success");
+                    }}
+                    className="flex items-center justify-between p-3 border border-neutral-100 rounded-lg hover:bg-neutral-50 hover:border-neutral-200 transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-neutral-50 rounded-lg text-neutral-400 group-hover:text-black transition-colors">
+                        <HugeiconsIcon icon={act.icon} size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-neutral-850">{act.name}</p>
+                        <p className="text-[9px] text-neutral-400 font-semibold">{act.desc}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-neutral-300 group-hover:text-black transition-colors">→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 2. All Assets (Inventory page)
+  const renderAllAssets = () => {
+    // Basic filter states
+    const filteredAssets = assetsList.filter((item) => {
+      const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.id.toLowerCase().includes(searchQuery.toLowerCase()) || item.custodian.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchStatus = statusFilter === "All" || item.status === statusFilter;
+      const matchDept = deptFilter === "All" || item.department === deptFilter;
+      return matchSearch && matchStatus && matchDept;
+    });
+
+    return (
+      <div className="space-y-6 bg-white border border-neutral-200/80 rounded-lg p-6">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Asset Inventory</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify workspace hardware lists, condition, and warranty status</p>
+          </div>
+          <button
+            onClick={() => setActiveTab("Register Asset")}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors"
+          >
+            Register Asset
+          </button>
+        </div>
+
+        {/* Filter bar */}
+        <div className="flex flex-wrap items-center gap-3 w-full bg-[#FBFBFB] p-3 border border-neutral-100 rounded-lg text-xs">
+          <div className="relative">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400">
+              <HugeiconsIcon icon={Search01Icon} size={14} />
+            </span>
+            <input
+              type="text"
+              placeholder="Search assets..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 border border-neutral-200 rounded-lg w-60 bg-white focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
+            <option value="All">All Statuses</option>
+            <option value="Available">Available</option>
+            <option value="Allocated">Allocated</option>
+            <option value="Maintenance">Maintenance</option>
+          </select>
+          <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
+            <option value="All">All Departments</option>
+            <option value="Engineering">Engineering</option>
+            <option value="IT Operations">IT Operations</option>
+            <option value="Finance">Finance</option>
+            <option value="Operations">Operations</option>
+          </select>
+        </div>
+
+        {/* Assets table */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-neutral-100">
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Asset Tag</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Asset Name</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Category</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Department</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Current Holder</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Status</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Warranty Expiry</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAssets.map((asset) => (
+                <TableRow
+                  key={asset.id}
+                  onClick={() => {
+                    setSelectedItem({ type: "asset", data: asset });
+                    setDrawerTab("Overview");
+                    setIsDrawerOpen(true);
+                  }}
+                  className="border-neutral-100 hover:bg-neutral-50/50 cursor-pointer"
+                >
+                  <TableCell className="py-4 text-xs font-bold text-neutral-450">#{asset.id}</TableCell>
+                  <TableCell className="py-4 text-xs font-semibold text-neutral-900">{asset.name}</TableCell>
+                  <TableCell className="py-4 text-xs text-neutral-500 font-semibold">{asset.category}</TableCell>
+                  <TableCell className="py-4 text-xs text-neutral-500 font-medium">{asset.department}</TableCell>
+                  <TableCell className="py-4 text-xs text-neutral-900 font-bold">{asset.custodian}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                      asset.status === "Available"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                        : asset.status === "Allocated"
+                        ? "bg-neutral-950 text-white"
+                        : "bg-amber-50 text-amber-700 border border-amber-100"
+                    }`}>
+                      {asset.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-4 text-xs text-neutral-400 font-medium">{asset.warrantyExpiry}</TableCell>
+                  <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: "Retire Asset?",
+                          description: `Are you sure you want to retire ${asset.name} from active inventory? This action Purges its checkouts log permanently.`,
+                          onConfirm: () => {
+                            setAssetsList(prev => prev.filter(a => a.id !== asset.id));
+                            triggerToast("Asset retired successfully", "success");
+                          }
+                        });
+                      }}
+                      className="px-2.5 py-1 text-[10px] font-bold border border-red-200 hover:bg-red-50 text-red-650 rounded-lg transition-colors"
+                    >
+                      Retire
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredAssets.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center text-xs text-neutral-400 italic">No assets match search queries</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
+  // 3. Register Asset Form Wizard
+  const renderRegisterAsset = () => {
+    const handleRegisterSubmit = () => {
+      const newId = `AST-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRecord = {
+        id: newId,
+        name: newAssetData.name || "Generic Asset",
+        category: newAssetData.category,
+        custodian: "IT Pool",
+        department: newAssetData.department,
+        purchasedDate: newAssetData.purchaseDate,
+        warrantyExpiry: newAssetData.warrantyExpiry,
+        status: "Available",
+      };
+
+      setAssetsList((prev) => [newRecord, ...prev]);
+      triggerToast(`Successfully registered ${newRecord.name} (${newId})`, "success");
+      setRegisterStep(5); // Show review final qr step
+    };
+
+    return (
+      <div className="bg-white border border-neutral-200/80 rounded-lg p-6 max-w-2xl">
+        <div className="border-b border-neutral-100 pb-4 mb-6 flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Register New Asset</h3>
+            <p className="text-xs text-neutral-400 mt-0.5">Wizard step {registerStep} of 5</p>
+          </div>
+          {registerStep < 5 && (
+            <div className="flex items-center gap-1 bg-neutral-50 border rounded-lg p-1 text-[10px] font-semibold text-neutral-450">
+              {[1, 2, 3, 4].map((s) => (
+                <span key={s} className={`px-2 py-0.5 rounded ${registerStep === s ? "bg-black text-white" : ""}`}>S{s}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Step 1: Basic Information */}
+        {registerStep === 1 && (
+          <div className="space-y-4 text-xs">
+            <div className="space-y-1">
+              <label className="font-semibold text-neutral-700">Asset Name *</label>
+              <input
+                type="text"
+                placeholder="e.g. Dell Latitude 7440"
+                value={newAssetData.name}
+                onChange={(e) => setNewAssetData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Category</label>
+                <select
+                  value={newAssetData.category}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                >
+                  <option>IT Hardware</option>
+                  <option>AV Equipment</option>
+                  <option>Mobile Devices</option>
+                  <option>Office Furniture</option>
+                  <option>Network Gear</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Serial Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. SN-892849"
+                  value={newAssetData.serialNumber}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, serialNumber: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold text-neutral-700">Description</label>
+              <textarea
+                placeholder="Details of physical components or configuration specs"
+                value={newAssetData.description}
+                onChange={(e) => setNewAssetData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-lg h-20"
+              />
+            </div>
+            <div className="pt-4 border-t flex justify-end">
+              <button
+                disabled={!newAssetData.name}
+                onClick={() => setRegisterStep(2)}
+                className="px-4 py-2 font-bold bg-black hover:bg-neutral-800 disabled:opacity-50 text-white rounded-lg transition-all"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Purchase Information */}
+        {registerStep === 2 && (
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Purchase Date</label>
+                <input
+                  type="date"
+                  value={newAssetData.purchaseDate}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, purchaseDate: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Purchase Cost ($)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1499"
+                  value={newAssetData.purchaseCost}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, purchaseCost: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Vendor</label>
+                <input
+                  type="text"
+                  placeholder="e.g. CDW Inc."
+                  value={newAssetData.vendor}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, vendor: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Warranty Expiration</label>
+                <input
+                  type="date"
+                  value={newAssetData.warrantyExpiry}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, warrantyExpiry: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="pt-4 border-t flex justify-between">
+              <button onClick={() => setRegisterStep(1)} className="px-4 py-2 font-bold border rounded-lg text-neutral-600">Back</button>
+              <button onClick={() => setRegisterStep(3)} className="px-4 py-2 font-bold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all">Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Location */}
+        {registerStep === 3 && (
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Target Department</label>
+                <select
+                  value={newAssetData.department}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, department: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                >
+                  <option>Engineering</option>
+                  <option>IT Operations</option>
+                  <option>Finance</option>
+                  <option>Operations</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Building</label>
+                <input
+                  type="text"
+                  value={newAssetData.building}
+                  onChange={(e) => setNewAssetData(prev => ({ ...prev, building: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="font-semibold text-neutral-700">Floor</label>
+                <input type="text" value={newAssetData.floor} onChange={(e) => setNewAssetData(prev => ({ ...prev, floor: e.target.value }))} className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+              <div>
+                <label className="font-semibold text-neutral-700">Room</label>
+                <input type="text" value={newAssetData.room} onChange={(e) => setNewAssetData(prev => ({ ...prev, room: e.target.value }))} className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+              <div>
+                <label className="font-semibold text-neutral-700">Shelf Storage</label>
+                <input type="text" value={newAssetData.storageLocation} onChange={(e) => setNewAssetData(prev => ({ ...prev, storageLocation: e.target.value }))} className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+            </div>
+            <div className="pt-4 border-t flex justify-between">
+              <button onClick={() => setRegisterStep(2)} className="px-4 py-2 font-bold border rounded-lg text-neutral-600">Back</button>
+              <button onClick={() => setRegisterStep(4)} className="px-4 py-2 font-bold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all">Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Review and Submit */}
+        {registerStep === 4 && (
+          <div className="space-y-6 text-xs">
+            <div className="bg-[#FBFBFB] border border-neutral-100 rounded-lg p-5 space-y-3">
+              <div className="flex justify-between">
+                <span className="text-neutral-450 font-semibold">Asset Name:</span>
+                <span className="font-bold text-neutral-900">{newAssetData.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-450 font-semibold">Category:</span>
+                <span className="font-semibold text-neutral-800">{newAssetData.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-450 font-semibold">Department / Location:</span>
+                <span className="font-semibold text-neutral-800">{newAssetData.department} - {newAssetData.building}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-450 font-semibold">Warranty Limit Expiry:</span>
+                <span className="font-semibold text-neutral-800">{newAssetData.warrantyExpiry}</span>
+              </div>
+            </div>
+            <div className="pt-4 border-t flex justify-between">
+              <button onClick={() => setRegisterStep(3)} className="px-4 py-2 font-bold border rounded-lg text-neutral-600">Back</button>
+              <button onClick={handleRegisterSubmit} className="px-4 py-2 font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all">Submit Registry</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Success & Generated QR Code review */}
+        {registerStep === 5 && (
+          <div className="space-y-6 text-xs text-center py-6 flex flex-col items-center">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full flex items-center justify-center text-lg font-bold">✓</div>
+            <div>
+              <h4 className="text-sm font-bold text-neutral-900">Registration Complete</h4>
+              <p className="text-[10px] text-neutral-400 mt-1 font-semibold">Asset was successfully recorded and QR barcode generated</p>
+            </div>
+            {/* Live QR representation */}
+            <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-sm flex flex-col items-center gap-3">
+              {/* QR Pattern SVG */}
+              <svg className="w-24 h-24 text-black" viewBox="0 0 100 100">
+                <rect x="5" y="5" width="20" height="20" fill="currentColor" />
+                <rect x="10" y="10" width="10" height="10" fill="white" />
+                <rect x="75" y="5" width="20" height="20" fill="currentColor" />
+                <rect x="80" y="10" width="10" height="10" fill="white" />
+                <rect x="5" y="75" width="20" height="20" fill="currentColor" />
+                <rect x="10" y="80" width="10" height="10" fill="white" />
+                {/* Random barcode grids */}
+                <rect x="35" y="15" width="10" height="15" fill="currentColor" />
+                <rect x="55" y="5" width="10" height="10" fill="currentColor" />
+                <rect x="40" y="45" width="20" height="20" fill="currentColor" />
+                <rect x="15" y="40" width="10" height="10" fill="currentColor" />
+                <rect x="70" y="50" width="15" height="15" fill="currentColor" />
+                <rect x="50" y="80" width="20" height="10" fill="currentColor" />
+              </svg>
+              <span className="text-[9px] font-bold text-neutral-400 bg-neutral-50 px-2.5 py-0.5 rounded tracking-wider uppercase">Tag: AST-{Math.floor(1000 + Math.random() * 9000)}</span>
+            </div>
+            <button
+              onClick={() => {
+                setRegisterStep(1);
+                setNewAssetData({
+                  name: "",
+                  category: "IT Hardware",
+                  assetTag: "",
+                  serialNumber: "",
+                  description: "",
+                  purchaseDate: "2026-07-12",
+                  purchaseCost: "",
+                  vendor: "",
+                  warrantyPeriod: "36 Months",
+                  warrantyExpiry: "2029-07-12",
+                  department: "Engineering",
+                  building: "Main HQ",
+                  floor: "Floor 2",
+                  room: "Room 204",
+                  storageLocation: "Shelf C-1",
+                  notes: "",
+                });
+                setActiveTab("All Assets");
+              }}
+              className="px-4 py-2 font-bold bg-black text-white hover:bg-neutral-800 rounded-lg text-xs"
+            >
+              Finish & Return
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 4. Asset Allocation page
+  const renderAllocations = () => {
+    // Only available assets can be allocated
+    const availableAssetsList = assetsList.filter(a => a.status === "Available");
+
+    const handleAllocateSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newAllocationData.assetId || !newAllocationData.employeeId) {
+        triggerToast("Please select both an asset and an employee", "error");
+        return;
+      }
+
+      // Check if selected asset is available
+      const assetRecord = assetsList.find(a => a.id === newAllocationData.assetId);
+      if (!assetRecord || assetRecord.status !== "Available") {
+        triggerToast("Asset is not available for allocation", "error");
+        return;
+      }
+
+      // Perform allocation
+      const employeeRecord = employees.find(emp => emp.id === newAllocationData.employeeId);
+      const newAllocationRecord = {
+        id: `ALC-${Math.floor(100 + Math.random() * 900)}`,
+        assetId: newAllocationData.assetId,
+        assetName: assetRecord.name,
+        employeeId: newAllocationData.employeeId,
+        employeeName: employeeRecord ? employeeRecord.name : "Employee",
+        department: employeeRecord ? employeeRecord.dept : "Operations",
+        allocatedOn: newAllocationData.allocatedOn,
+        expectedReturn: newAllocationData.expectedReturn,
+        status: "Active",
+      };
+
+      setAllocations(prev => [newAllocationRecord, ...prev]);
+      // Update asset status
+      setAssetsList(prev => prev.map(a => a.id === newAllocationData.assetId ? { ...a, status: "Allocated", custodian: employeeRecord ? employeeRecord.name : "Employee" } : a));
+
+      triggerToast(`Allocated ${assetRecord.name} successfully`, "success");
+      setNewAllocationData({ assetId: "", employeeId: "", allocatedOn: "2026-07-12", expectedReturn: "2027-07-12", remarks: "" });
+    };
+
+    return (
+      <div className="space-y-8">
+        {/* Allocations dashboard metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            { label: "Available Assets", value: availableAssetsList.length, color: "text-emerald-600" },
+            { label: "Allocated Assets", value: allocations.filter(a => a.status === "Active").length, color: "text-neutral-900" },
+            { label: "Pending Returns", value: allocations.filter(a => a.status === "Returned").length, color: "text-neutral-400" },
+            { label: "Overdue Returns", value: allocations.filter(a => a.status === "Overdue").length, color: "text-red-650" },
+          ].map((item, i) => (
+            <div key={i} className="bg-white border border-neutral-200/80 rounded-lg p-5 flex flex-col justify-between shadow-sm">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{item.label}</span>
+              <h3 className="text-xl font-bold text-neutral-900 mt-2">{item.value} items</h3>
+            </div>
+          ))}
+        </div>
+
+        {/* Allocation action form & table split */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Allocation form */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">Allocate Asset Form</h3>
+              <p className="text-[10px] text-neutral-450 mt-1 font-semibold">Assign available hardware assets to verified team members</p>
+            </div>
+            <form onSubmit={handleAllocateSubmit} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Select Available Asset *</label>
+                <select
+                  value={newAllocationData.assetId}
+                  onChange={(e) => setNewAllocationData(prev => ({ ...prev, assetId: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none"
+                >
+                  <option value="">-- Choose Asset --</option>
+                  {availableAssetsList.map(asset => (
+                    <option key={asset.id} value={asset.id}>{asset.name} (#{asset.id})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-neutral-700">Select Employee *</label>
+                <select
+                  value={newAllocationData.employeeId}
+                  onChange={(e) => setNewAllocationData(prev => ({ ...prev, employeeId: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none"
+                >
+                  <option value="">-- Choose Employee --</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.dept})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-semibold text-neutral-700">Allocation Date</label>
+                  <input
+                    type="date"
+                    value={newAllocationData.allocatedOn}
+                    onChange={(e) => setNewAllocationData(prev => ({ ...prev, allocatedOn: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold text-neutral-700">Expected Return</label>
+                  <input
+                    type="date"
+                    value={newAllocationData.expectedReturn}
+                    onChange={(e) => setNewAllocationData(prev => ({ ...prev, expectedReturn: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 bg-black hover:bg-neutral-800 text-white rounded-lg font-bold text-xs transition-colors"
+              >
+                Submit Allocation
+              </button>
+            </form>
+          </div>
+
+          {/* Allocation active listings */}
+          <div className="lg:col-span-2 bg-white border border-neutral-200/80 rounded-lg p-6 space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">Active Deployments Ledger</h3>
+              <p className="text-[10px] text-neutral-400 mt-1 font-semibold">Allocations log with expected return deadlines</p>
+            </div>
+            <div className="overflow-x-auto text-xs">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-neutral-100">
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Asset</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Employee</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Allocated On</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Expected Return</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Status</TableHead>
+                    <TableHead className="font-bold text-neutral-400 uppercase text-[9px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allocations.map((alc) => (
+                    <TableRow key={alc.id} className="border-t border-neutral-50 hover:bg-neutral-50/50">
+                      <td className="py-3 font-bold text-neutral-900">{alc.assetName}</td>
+                      <td className="py-3 font-semibold text-neutral-850">{alc.employeeName}</td>
+                      <td className="py-3 text-neutral-500 font-semibold">{alc.allocatedOn}</td>
+                      <td className="py-3 text-neutral-400 font-semibold">{alc.expectedReturn}</td>
+                      <td className="py-3">
+                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          alc.status === "Active" ? "bg-emerald-50 text-emerald-700" : alc.status === "Overdue" ? "bg-red-50 text-red-700" : "bg-neutral-100 text-neutral-500"
+                        }`}>{alc.status}</span>
+                      </td>
+                      <td className="py-3 text-right">
+                        {alc.status !== "Returned" && (
+                          <button
+                            onClick={() => {
+                              setConfirmModal({
+                                isOpen: true,
+                                title: "Confirm Asset Return?",
+                                description: `Has ${alc.employeeName} physically returned ${alc.assetName}?`,
+                                onConfirm: () => {
+                                  setAllocations(prev => prev.map(a => a.id === alc.id ? { ...a, status: "Returned" } : a));
+                                  setAssetsList(prev => prev.map(a => a.id === alc.assetId ? { ...a, status: "Available", custodian: "IT Pool" } : a));
+                                  triggerToast("Asset returned to IT pool", "success");
+                                }
+                              });
+                            }}
+                            className="px-2.5 py-1 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-600 transition-colors"
+                          >
+                            Return
+                          </button>
+                        )}
+                      </td>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 5. Transfers Management page
+  const renderTransfers = () => {
+    const handleTransferAction = (id: string, action: "Approved" | "Rejected") => {
+      setTransfers(prev => prev.map(t => t.id === id ? { ...t, status: action } : t));
+      triggerToast(`Transfer request ${action.toLowerCase()} successfully`, "success");
+    };
+
+    return (
+      <div className="space-y-6 bg-white border border-neutral-200/80 rounded-lg p-6">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Equipment Transfers</h3>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify and approve physical equipment handovers between division custodians</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-4 border-t border-b border-neutral-100 text-xs">
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Pending Approvals</span>
+            <p className="text-lg font-bold text-amber-600 mt-1">{transfers.filter(t => t.status === "Pending").length} transfers</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Approved Movement</span>
+            <p className="text-lg font-bold text-neutral-900 mt-1">{transfers.filter(t => t.status === "Approved").length} requests</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Completed Transfers</span>
+            <p className="text-lg font-bold text-emerald-600 mt-1">{transfers.filter(t => t.status === "Completed").length} done</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Purged Records</span>
+            <p className="text-lg font-bold text-neutral-450 mt-1">12 logs</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto text-xs mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-neutral-100">
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Transfer ID</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Asset</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">From Custodian</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">To Recipient</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Requested By</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Reason</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Status</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transfers.map((trf) => (
+                <TableRow
+                  key={trf.id}
+                  onClick={() => {
+                    setSelectedItem({ type: "transfer", data: trf });
+                    setDrawerTab("Overview");
+                    setIsDrawerOpen(true);
+                  }}
+                  className="border-neutral-100 hover:bg-neutral-50/50 cursor-pointer"
+                >
+                  <TableCell className="py-4 font-bold text-neutral-400">#{trf.id}</TableCell>
+                  <TableCell className="py-4 font-bold text-neutral-900">{trf.assetName}</TableCell>
+                  <TableCell className="py-4 font-semibold text-neutral-850">{trf.fromUser}</TableCell>
+                  <TableCell className="py-4 font-semibold text-neutral-850">{trf.toUser}</TableCell>
+                  <TableCell className="py-4 text-neutral-500 font-semibold">{trf.requestedBy}</TableCell>
+                  <TableCell className="py-4 text-neutral-400 max-w-xs truncate">{trf.reason}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      trf.status === "Pending" ? "bg-amber-50 text-amber-700" : trf.status === "Approved" ? "bg-neutral-950 text-white" : "bg-neutral-100 text-neutral-500"
+                    }`}>{trf.status}</span>
+                  </TableCell>
+                  <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    {trf.status === "Pending" ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleTransferAction(trf.id, "Rejected")} className="px-2.5 py-1 text-[10px] font-bold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Deny</button>
+                        <button onClick={() => handleTransferAction(trf.id, "Approved")} className="px-2.5 py-1 text-[10px] font-bold bg-black hover:bg-neutral-800 text-white rounded-lg">Approve</button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-neutral-400 italic">Resolved</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
+  // 6. Maintenance Center page
+  const renderMaintenance = () => {
+    const handleAssignTechnician = (id: string) => {
+      setMaintenance(prev => prev.map(m => m.id === id ? { ...m, status: "In Progress", technician: "Dave Miller" } : m));
+      triggerToast("Technician assigned to work ticket", "success");
+    };
+
+    const handleCloseTicket = (id: string) => {
+      setMaintenance(prev => prev.map(m => m.id === id ? { ...m, status: "Resolved" } : m));
+      triggerToast("Maintenance ticket resolved and closed", "success");
+    };
+
+    return (
+      <div className="space-y-6 bg-white border border-neutral-200/80 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Maintenance Logs</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify system hardware repairs, diagnostics checkups, and diagnostic costs</p>
+          </div>
+          <button
+            onClick={() => triggerToast("Create Maintenance Ticket modal opened", "success")}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors"
+          >
+            Report Issue
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 py-4 border-t border-b border-neutral-100 text-xs">
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Critical Tasks</span>
+            <p className="text-lg font-bold text-red-650 mt-1">{maintenance.filter(m => m.priority === "Critical" && m.status !== "Resolved").length} active</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">In Diagnostics</span>
+            <p className="text-lg font-bold text-amber-600 mt-1">{maintenance.filter(m => m.status === "In Progress").length} devices</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Pending Checks</span>
+            <p className="text-lg font-bold text-purple-650 mt-1">{maintenance.filter(m => m.status === "Pending").length} tickets</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Resolved Today</span>
+            <p className="text-lg font-bold text-emerald-600 mt-1">{maintenance.filter(m => m.status === "Resolved").length} items</p>
+          </div>
+          <div>
+            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Accumulated Cost</span>
+            <p className="text-lg font-bold text-neutral-900 mt-1">$370</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto text-xs mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-neutral-100">
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Ticket ID</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Asset</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Reported Issue</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Priority</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Technician</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Status</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Cost</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {maintenance.map((maint) => (
+                <TableRow
+                  key={maint.id}
+                  onClick={() => {
+                    setSelectedItem({ type: "maintenance", data: maint });
+                    setDrawerTab("Overview");
+                    setIsDrawerOpen(true);
+                  }}
+                  className="border-neutral-100 hover:bg-neutral-50/50 cursor-pointer"
+                >
+                  <TableCell className="py-4 font-bold text-neutral-400">#{maint.id}</TableCell>
+                  <TableCell className="py-4 font-bold text-neutral-900">{maint.assetName}</TableCell>
+                  <TableCell className="py-4 font-semibold text-neutral-600">{maint.issue}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      maint.priority === "Critical" ? "bg-red-50 text-red-700" : maint.priority === "High" ? "bg-amber-50 text-amber-700" : "bg-neutral-100 text-neutral-500"
+                    }`}>{maint.priority}</span>
+                  </TableCell>
+                  <TableCell className="py-4 text-neutral-500 font-semibold">{maint.technician}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      maint.status === "In Progress" ? "bg-amber-50 text-amber-750" : maint.status === "Resolved" ? "bg-emerald-50 text-emerald-700" : "bg-neutral-950 text-white"
+                    }`}>{maint.status}</span>
+                  </TableCell>
+                  <TableCell className="py-4 font-bold text-neutral-900">{maint.cost}</TableCell>
+                  <TableCell className="py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-2">
+                      {maint.status === "Pending" && (
+                        <button onClick={() => handleAssignTechnician(maint.id)} className="px-2.5 py-1 text-[10px] font-bold bg-black text-white hover:bg-neutral-800 rounded-lg">Assign</button>
+                      )}
+                      {maint.status === "In Progress" && (
+                        <button onClick={() => handleCloseTicket(maint.id)} className="px-2.5 py-1 text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg">Resolve</button>
+                      )}
+                      {maint.status === "Resolved" && (
+                        <span className="text-[10px] text-neutral-400 italic">Resolved</span>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
+  // 7. Resource Bookings (Preventing overlapping bookings)
+  const renderResourceBookings = () => {
+    const handleCancelBooking = (id: string) => {
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "Cancelled" } : b));
+      triggerToast("Booking successfully cancelled", "success");
+    };
+
+    return (
+      <div className="space-y-6 bg-white border border-neutral-200/80 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Resource Bookings</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Coordinate scheduling of camera rigs, AV equipment, and shared test modules</p>
+          </div>
+          <button
+            onClick={() => {
+              // Simulating booking creation with overlap checks
+              const overlap = bookings.some(b => b.status === "Active" && b.resource === "Conference Room Projector 4K");
+              if (overlap) {
+                triggerToast("Validation Alert: Time slot overlap detected on Conference Room Projector", "error");
+              } else {
+                triggerToast("Booking registration slot opened", "success");
+              }
+            }}
+            className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors"
+          >
+            Book Resource
+          </button>
+        </div>
+
+        <div className="overflow-x-auto text-xs mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-neutral-100">
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Booking ID</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Resource Name</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Booked By</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Purpose</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Start Time</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">End Time</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px]">Status</TableHead>
+                <TableHead className="font-bold text-neutral-400 uppercase text-[9px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bookings.map((bkg) => (
+                <TableRow key={bkg.id} className="border-t border-neutral-50 hover:bg-neutral-50/50">
+                  <TableCell className="py-4 font-bold text-neutral-400">#{bkg.id}</TableCell>
+                  <TableCell className="py-4 font-bold text-neutral-900">{bkg.resource}</TableCell>
+                  <TableCell className="py-4 font-semibold text-neutral-850">{bkg.bookedBy}</TableCell>
+                  <TableCell className="py-4 text-neutral-550 font-medium">{bkg.purpose}</TableCell>
+                  <TableCell className="py-4 text-neutral-400 font-semibold">{bkg.fromDate}</TableCell>
+                  <TableCell className="py-4 text-neutral-400 font-semibold">{bkg.toDate}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      bkg.status === "Active" ? "bg-emerald-50 text-emerald-700" : bkg.status === "Upcoming" ? "bg-blue-50 text-blue-700" : "bg-neutral-100 text-neutral-500"
+                    }`}>{bkg.status}</span>
+                  </TableCell>
+                  <TableCell className="py-4 text-right">
+                    {bkg.status !== "Cancelled" ? (
+                      <button
+                        onClick={() => handleCancelBooking(bkg.id)}
+                        className="px-2 py-1 text-[10px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-neutral-400 italic">Cancelled</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
+  // 8. Asset Manager Reports View
+  const renderAssetManagerReports = () => (
+    <div className="space-y-6">
+      <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Operations Reporting Center</h3>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Export custom CSV, Excel, or PDF asset reports and warranty registers</p>
+        </div>
+        <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-4 text-xs font-semibold text-neutral-600">
+          <span>Format Options:</span>
+          <button onClick={() => triggerToast("CSV export initiated", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">CSV</button>
+          <button onClick={() => triggerToast("Excel spreadsheet generated", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">Excel</button>
+          <button onClick={() => triggerToast("PDF document compiled", "success")} className="px-2 py-0.5 bg-neutral-100 rounded hover:bg-neutral-200 transition-colors">PDF</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[
+          { title: "Asset Utilization Analysis", desc: "Measures allocation efficiency ratios and average equipment downtime logs." },
+          { title: "Maintenance Cost Breakdown", desc: "Detailed records of diagnostic costs, repairs frequency, and technician fees." },
+          { title: "Asset Warranty Registry", desc: "Tracks expirations logs, coverage limits, and soon-to-expire vendor agreements." },
+          { title: "Location Inventory Audits", desc: "Tracks barcodes and room storage logs across organization branches." },
+        ].map((report, idx) => (
+          <div key={idx} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between gap-4">
+            <div>
+              <h4 className="text-xs font-bold text-neutral-900">{report.title}</h4>
+              <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-relaxed">{report.desc}</p>
+            </div>
+            <button onClick={() => triggerToast(`${report.title} generated`, "success")} className="w-full py-2 bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg text-xs font-bold transition-all">
+              Compile Document
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // 9. Asset Manager Notifications log
+  const renderAssetManagerNotifications = () => (
+    <div className="bg-white border border-neutral-200/80 rounded-lg p-6 space-y-6">
+      <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Operations Warnings & Alert Center</h3>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Review and resolve hardware notices, repair tickets, and overdue alerts</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); triggerToast("All notifications marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
+          <button onClick={() => { setNotifications([]); triggerToast("Cleared notifications log", "error"); }} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors">Clear All</button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {notifications.map((notif) => (
+          <div key={notif.id} className={`flex items-start justify-between p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB] ${!notif.read ? "border-l-4 border-l-black" : ""}`}>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[8px] font-bold px-2 py-0.2 rounded uppercase ${
+                  notif.priority === "High" ? "bg-red-50 text-red-700" : notif.priority === "Medium" ? "bg-amber-50 text-amber-700" : "bg-neutral-100 text-neutral-500"
+                }`}>{notif.priority}</span>
+                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">{notif.type}</span>
+              </div>
+              <h4 className="text-xs font-bold text-neutral-900 mt-1.5">{notif.title}</h4>
+              <p className="text-[10px] text-neutral-550 mt-1 leading-relaxed">{notif.description}</p>
+              <p className="text-[9px] text-neutral-450 mt-2 font-semibold">{notif.timestamp}</p>
+            </div>
+            {!notif.read && (
+              <button onClick={() => markNotificationRead(notif.id)} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[10px] font-semibold text-neutral-600">Mark Read</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // 10. Asset Manager Profile view
+  const renderProfile = () => (
+    <div className="space-y-6 max-w-2xl">
+      {/* Profile summary card */}
+      <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col md:flex-row gap-6 items-center">
+        <div className="w-16 h-16 rounded-full bg-neutral-900 text-white font-extrabold flex items-center justify-center text-xl shrink-0">
+          PS
+        </div>
+        <div className="space-y-1 text-center md:text-left flex-1">
+          <h3 className="text-sm font-extrabold text-neutral-900 tracking-tight">Priya Shah</h3>
+          <p className="text-xs text-neutral-400 font-medium">Asset Manager • IT Operations Division</p>
+          <p className="text-[10px] text-neutral-450 mt-1 leading-relaxed">Contact: priya.shah@company.com | ext. 4410</p>
+        </div>
+      </div>
+
+      {/* Managed statistics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {[
+          { label: "Assets Managed", value: 206 },
+          { label: "Deployments Executed", value: 88 },
+          { label: "Repairs Closed", value: 12 },
+          { label: "Movements Logged", value: 24 },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white border border-neutral-200/80 rounded-lg p-5 text-center shadow-sm">
+            <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider block">{stat.label}</span>
+            <p className="text-xl font-extrabold text-neutral-900 mt-2">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Accordion Profile Settings */}
+      <div className="bg-white border border-neutral-200/80 rounded-lg overflow-hidden text-xs">
+        <div className="p-5 border-b border-neutral-100 hover:bg-neutral-50 flex items-center justify-between">
+          <div>
+            <h4 className="font-bold text-neutral-900 uppercase">Notification Subscriptions</h4>
+            <p className="text-[9px] text-neutral-400 mt-0.5">Toggle alert preferences for emails and desktop triggers</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            {[
+              { label: "Email alert on high priority maintenance tasks", default: true },
+              { label: "Notification reminder on expected return deadlines", default: true },
+              { label: "Daily checkout digest spreadsheet attachments", default: false },
+            ].map((pref, i) => (
+              <label key={i} className="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" defaultChecked={pref.default} className="w-4 h-4 rounded border-neutral-300 text-black focus:ring-black cursor-pointer" />
+                <span className="text-neutral-600 group-hover:text-neutral-900 transition-colors font-medium">{pref.label}</span>
+              </label>
+            ))}
+          </div>
+          <button onClick={() => triggerToast("Profile preferences updated", "success")} className="px-4 py-2 bg-black hover:bg-neutral-800 text-white rounded-lg font-bold">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-[#F9F9F9] text-neutral-900 font-sans overflow-hidden">
       {/* Sidebar - Collapsible */}
@@ -1827,7 +3235,7 @@ export function DashboardSection() {
             <div className="flex-1 border-t border-neutral-200/60"></div>
             {isSidebarOpen && (
               <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider px-1">
-                Management
+                {currentRole === "Admin" ? "Management" : "Operations"}
               </span>
             )}
             <div className="flex-1 border-t border-neutral-200/60"></div>
@@ -1835,7 +3243,7 @@ export function DashboardSection() {
 
           {/* Navigation Links - Partition 2 */}
           <div className="p-4 py-3 space-y-1.5 text-neutral-500">
-            {managementNavItems.map((item) => {
+            {(currentRole === "Admin" ? managementNavItems : assetManagerNavItems).map((item) => {
               const isActive = activeTab === item.name;
               return (
                 <Link
@@ -1938,11 +3346,63 @@ export function DashboardSection() {
               )}
             </button>
             <div className="h-8 w-px bg-neutral-200"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold uppercase">
-                AD
-              </div>
-              <span className="text-xs font-semibold text-neutral-600">Workspace Admin</span>
+            <div className="relative">
+              <button
+                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                className="flex items-center gap-2 hover:bg-neutral-50 px-2 py-1 rounded-lg transition-all text-left"
+              >
+                <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold uppercase">
+                  {currentRole === "Admin" ? "AD" : "PS"}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-bold text-neutral-900 leading-none">
+                    {currentRole === "Admin" ? "Alex Dupont" : "Priya Shah"}
+                  </span>
+                  <span className="text-[9px] font-medium text-neutral-400 mt-0.5 leading-none">
+                    {currentRole === "Admin" ? "Workspace Admin" : "Asset Manager"}
+                  </span>
+                </div>
+                <span className="text-[10px] text-neutral-400">▼</span>
+              </button>
+
+              {isRoleDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setIsRoleDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-1.5 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1.5 z-40 text-xs text-neutral-700">
+                    <button
+                      onClick={() => {
+                        setCurrentRole("Admin");
+                        setActiveTab("Dashboard");
+                        setIsRoleDropdownOpen(false);
+                        triggerToast("Switched to System Admin dashboard", "success");
+                      }}
+                      className={`w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center justify-between font-medium ${
+                        currentRole === "Admin" ? "text-black bg-neutral-50 font-bold" : ""
+                      }`}
+                    >
+                      <span>System Admin</span>
+                      {currentRole === "Admin" && <span>✓</span>}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentRole("Asset Manager");
+                        setActiveTab("Dashboard");
+                        setIsRoleDropdownOpen(false);
+                        triggerToast("Switched to Asset Manager dashboard", "success");
+                      }}
+                      className={`w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center justify-between font-medium ${
+                        currentRole === "Asset Manager" ? "text-black bg-neutral-50 font-bold" : ""
+                      }`}
+                    >
+                      <span>Asset Manager</span>
+                      {currentRole === "Asset Manager" && <span>✓</span>}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
@@ -1958,32 +3418,67 @@ export function DashboardSection() {
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900 mt-1">{activeTab}</h1>
             <p className="text-xs text-neutral-500 font-medium">
-              {activeTab === "Dashboard" && "Monitor organization activity, checkouts, and allocations from a single dashboard."}
-              {activeTab === "Organization" && "Configure primary corporate registries, tax identities, and branches."}
-              {activeTab === "Departments" && "Manage organization departments, heads, cost centers, and checkout permissions."}
-              {activeTab === "Employees" && "Track personnel records, roles list, email contacts, and allocated equipment."}
-              {activeTab === "Categories" && "Classify company hardware categories, warranty limits, and custom attributes."}
-              {activeTab === "Asset Overview" && "Administrative dashboard for physical gear metrics, heatmaps, and stats."}
-              {activeTab === "Audits" && "Plan and track barcode scans, asset verifications, and compliance checklists."}
-              {activeTab === "Reports" && "Generate and download custom CSV, Excel, or PDF asset reports."}
-              {activeTab === "Notifications" && "Verify system notifications logs, priority warnings, and alerts."}
-              {activeTab === "Roles & Permissions" && "Manage RBAC access privileges matrix using animated switch toggles."}
-              {activeTab === "Settings" && "Manage brand parameters, security keys, email structures, and timeouts."}
+              {currentRole === "Admin" ? (
+                <>
+                  {activeTab === "Dashboard" && "Monitor organization activity, checkouts, and allocations from a single dashboard."}
+                  {activeTab === "Organization" && "Configure primary corporate registries, tax identities, and branches."}
+                  {activeTab === "Departments" && "Manage organization departments, heads, cost centers, and checkout permissions."}
+                  {activeTab === "Employees" && "Track personnel records, roles list, email contacts, and allocated equipment."}
+                  {activeTab === "Categories" && "Classify company hardware categories, warranty limits, and custom attributes."}
+                  {activeTab === "Asset Overview" && "Administrative dashboard for physical gear metrics, heatmaps, and stats."}
+                  {activeTab === "Audits" && "Plan and track barcode scans, asset verifications, and compliance checklists."}
+                  {activeTab === "Reports" && "Generate and download custom CSV, Excel, or PDF asset reports."}
+                  {activeTab === "Notifications" && "Verify system notifications logs, priority warnings, and alerts."}
+                  {activeTab === "Roles & Permissions" && "Manage RBAC access privileges matrix using animated switch toggles."}
+                  {activeTab === "Settings" && "Manage brand parameters, security keys, email structures, and timeouts."}
+                </>
+              ) : (
+                <>
+                  {activeTab === "Dashboard" && "Operational command center showing real-time metrics and checkouts."}
+                  {activeTab === "All Assets" && "Manage active equipment inventory lists, warranty details, and conditions."}
+                  {activeTab === "Register Asset" && "Step-by-step registry wizard for cataloging new organization devices."}
+                  {activeTab === "Categories" && "Classify company hardware categories, warranty limits, and custom attributes."}
+                  {activeTab === "Allocations" && "Allocate available hardware devices to verified employees."}
+                  {activeTab === "Transfers" && "Approve and track physical equipment handovers between division custodians."}
+                  {activeTab === "Maintenance" && "Report issues, assign technicians, track repair tasks, and cost logs."}
+                  {activeTab === "Bookings" && "Book and coordinate temporary resources with overlap protection validation checks."}
+                  {activeTab === "Reports" && "Download custom operational spreadsheets, warranty details, and repairs costs."}
+                  {activeTab === "Profile" && "Verify active profile configuration, credentials, and notification settings."}
+                </>
+              )}
             </p>
           </div>
 
           {/* Render Active View */}
-          {activeTab === "Dashboard" && renderDashboard()}
-          {activeTab === "Organization" && renderOrganization()}
-          {activeTab === "Departments" && renderDepartments()}
-          {activeTab === "Employees" && renderEmployees()}
-          {activeTab === "Categories" && renderCategories()}
-          {activeTab === "Asset Overview" && renderAssetOverview()}
-          {activeTab === "Audits" && renderAudits()}
-          {activeTab === "Reports" && renderReports()}
-          {activeTab === "Notifications" && renderNotifications()}
-          {activeTab === "Roles & Permissions" && renderRolesPermissions()}
-          {activeTab === "Settings" && renderSettings()}
+          {currentRole === "Admin" ? (
+            <>
+              {activeTab === "Dashboard" && renderDashboard()}
+              {activeTab === "Organization" && renderOrganization()}
+              {activeTab === "Departments" && renderDepartments()}
+              {activeTab === "Employees" && renderEmployees()}
+              {activeTab === "Categories" && renderCategories()}
+              {activeTab === "Asset Overview" && renderAssetOverview()}
+              {activeTab === "Audits" && renderAudits()}
+              {activeTab === "Reports" && renderReports()}
+              {activeTab === "Notifications" && renderNotifications()}
+              {activeTab === "Roles & Permissions" && renderRolesPermissions()}
+              {activeTab === "Settings" && renderSettings()}
+            </>
+          ) : (
+            <>
+              {activeTab === "Dashboard" && renderAssetManagerDashboard()}
+              {activeTab === "All Assets" && renderAllAssets()}
+              {activeTab === "Register Asset" && renderRegisterAsset()}
+              {activeTab === "Categories" && renderCategories()}
+              {activeTab === "Allocations" && renderAllocations()}
+              {activeTab === "Transfers" && renderTransfers()}
+              {activeTab === "Maintenance" && renderMaintenance()}
+              {activeTab === "Bookings" && renderResourceBookings()}
+              {activeTab === "Reports" && renderAssetManagerReports()}
+              {activeTab === "Notifications" && renderAssetManagerNotifications()}
+              {activeTab === "Profile" && renderProfile()}
+            </>
+          )}
         </main>
 
         {/* Global Overlays */}
