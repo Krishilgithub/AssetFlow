@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
 import { AddEmployeeModal } from "@/components/modals/add-employee-modal";
 import { AddCategoryModal } from "@/components/modals/add-category-modal";
+import { AllocateAssetModal } from "@/components/modals/allocate-asset-modal";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -268,6 +270,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const { data: kpis } = useDashboardKPIs();
   const { data: chartsData } = useDashboardCharts();
   const { data: currentUser } = useCurrentUser();
+  const queryClient = useQueryClient();
 
   const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : (initialRole === "Admin" ? "Alex Dupont" : "Priya Shah");
   const userInitials = currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() : (initialRole === "Admin" ? "AD" : "PS");
@@ -417,6 +420,8 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
   const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
+  const [allocateAssetData, setAllocateAssetData] = useState<{ id: string; name: string } | null>(null);
+  const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
 
   const { data: activitiesData } = useDashboardActivities();
   const activityLogs = activitiesData || [];
@@ -1335,6 +1340,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                 <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Custodian</TableHead>
                 <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Warranty Expiration</TableHead>
                 <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Status</TableHead>
+                <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1351,6 +1357,48 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                     }`}>
                       {asset.status}
                     </span>
+                  </TableCell>
+                  <TableCell className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    {asset.status === "Available" ? (
+                      <button
+                        onClick={() => {
+                          setAllocateAssetData({ id: asset.id, name: asset.name });
+                          setIsAllocateModalOpen(true);
+                        }}
+                        className="px-2.5 py-1 text-[10px] font-bold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors"
+                      >
+                        Assign Asset
+                      </button>
+                    ) : asset.status === "Allocated" ? (
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Mark asset "${asset.name}" as returned?`)) {
+                            try {
+                              const res = await fetch(`/api/allocations/${asset.allocationId}/return`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ condition: 'Good' })
+                              });
+                              if (res.ok) {
+                                triggerToast("Asset returned successfully", "success");
+                                queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+                                queryClient.invalidateQueries({ queryKey: ["dashboard", "kpis"] });
+                              } else {
+                                const err = await res.json().catch(() => ({}));
+                                triggerToast(err.error || "Failed to return asset", "error");
+                              }
+                            } catch {
+                              triggerToast("An error occurred", "error");
+                            }
+                          }
+                        }}
+                        className="px-2.5 py-1 text-[10px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-600 transition-colors"
+                      >
+                        Mark Returned
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-neutral-400 italic">In service</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -2017,6 +2065,18 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         <AddDepartmentModal isOpen={isAddDepartmentModalOpen} onClose={() => setIsAddDepartmentModalOpen(false)} onSuccess={() => triggerToast("Department created successfully", "success")} />
         <AddAssetModal isOpen={isAddAssetModalOpen} onClose={() => setIsAddAssetModalOpen(false)} onSuccess={() => triggerToast("Asset registered successfully", "success")} />
         <AddCategoryModal isOpen={isAddCategoryModalOpen} onClose={() => setIsAddCategoryModalOpen(false)} onSuccess={() => triggerToast("Category created successfully", "success")} />
+        {allocateAssetData && (
+          <AllocateAssetModal
+            isOpen={isAllocateModalOpen}
+            onClose={() => {
+              setIsAllocateModalOpen(false);
+              setAllocateAssetData(null);
+            }}
+            assetId={allocateAssetData.id}
+            assetName={allocateAssetData.name}
+            onSuccess={() => triggerToast("Asset allocated successfully", "success")}
+          />
+        )}
       </div>
     </div>
   );

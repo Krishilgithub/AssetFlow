@@ -66,8 +66,11 @@ export class AssetService {
         department: a.departments?.name || 'Unassigned',
         location: a.locations?.name || 'Unassigned',
         assignedTo,
+        custodian: assignedTo,
+        allocationId: activeAllocation?.id || null,
         purchaseCost: a.purchase_cost ? Number(a.purchase_cost) : 0,
         purchaseDate: a.purchase_date?.toISOString().split('T')[0] || 'Unknown',
+        warrantyExpiry: activeAllocation?.expected_return_date ? activeAllocation.expected_return_date.toLocaleDateString() : 'N/A',
       };
     });
   }
