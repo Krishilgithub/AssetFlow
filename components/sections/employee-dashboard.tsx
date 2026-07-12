@@ -35,16 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// ─── Employee Mock Data ──────────────────────────────────────────────
-const EMPLOYEE = {
-  name: "Jordan Rivera",
-  id: "EMP-214",
-  dept: "Engineering",
-  email: "jordan.rivera@company.com",
-  phone: "+1 (415) 555-0192",
-  initials: "JR",
-  joined: "Mar 14, 2024",
-};
+// ─── Employee Mock Data Removed ─────────────────────────────────────────
 
 const TODAY = new Date().toLocaleDateString("en-US", {
   weekday: "long",
@@ -127,10 +118,10 @@ export function EmployeeDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
 
   const { data: currentUser } = useCurrentUser();
-  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : EMPLOYEE.name;
+  const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Employee";
   const userInitials = currentUser
     ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase()
-    : EMPLOYEE.initials;
+    : "EM";
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -510,7 +501,7 @@ export function EmployeeDashboard() {
             <div className="w-12 h-12 rounded-full bg-neutral-950 text-white font-extrabold text-lg flex items-center justify-center shrink-0">{userInitials}</div>
             <div>
               <h2 className="text-sm font-extrabold text-neutral-900">Good morning, {userName.split(" ")[0]} 👋</h2>
-              <p className="text-[11px] text-neutral-500 font-medium mt-0.5">{EMPLOYEE.dept} · {EMPLOYEE.id}</p>
+              <p className="text-[11px] text-neutral-500 font-medium mt-0.5">{currentUser?.role || "Employee"} · {currentUser?.id.substring(0,8) || "EMP-001"}</p>
             </div>
           </div>
           <p className="text-[10px] text-neutral-400 font-semibold">{TODAY}</p>
@@ -668,7 +659,7 @@ export function EmployeeDashboard() {
   const renderBookResources = () => {
     const resources = ["Conference Room A", "Conference Room B", "Sony 4K Projector", "Epson Projector", "Company Van", "Lab Room A", "Lab Room B"];
 
-    const handleBookingSubmit = (e: React.FormEvent) => {
+    const handleBookingSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!bookingForm.resource || !bookingForm.date || !bookingForm.startTime || !bookingForm.endTime) {
         triggerToast("Please fill in all required fields", "error"); return;
@@ -682,10 +673,15 @@ export function EmployeeDashboard() {
         !(bookingForm.endTime <= b.startTime || bookingForm.startTime >= b.endTime)
       );
       if (overlap) { triggerToast(`Time conflict: ${bookingForm.resource} is already booked in that slot`, "error"); return; }
-      const newBkg = { id: `BKG-${100 + bookings.length}`, ...bookingForm, status: "Upcoming" };
-      setBookings((prev: any) => [newBkg, ...prev]);
-      setBookingForm({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
-      triggerToast(`Booking confirmed for ${newBkg.resource}`, "success");
+      
+      try {
+        await axios.post('/api/me/bookings', bookingForm);
+        setBookingForm({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
+        triggerToast(`Booking confirmed for ${bookingForm.resource}`, "success");
+        refetchBookings();
+      } catch (err: any) {
+        triggerToast(err.response?.data?.error || err.message, "error");
+      }
     };
 
     const kpis = [
@@ -787,7 +783,7 @@ export function EmployeeDashboard() {
                       <td className="py-3"><StatusBadge status={bkg.status} /></td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {bkg.status !== "Cancelled" && bkg.status !== "Completed" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel your booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: () => { setBookings((prev: any) => prev.map((b: any) => b.id === bkg.id ? { ...b, status: "Cancelled" } : b)); triggerToast("Booking cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel your booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: async () => { try { await axios.patch(`/api/me/bookings/${bkg.id}/cancel`); triggerToast("Booking cancelled", "success"); refetchBookings(); } catch (e: any) { triggerToast(e.response?.data?.error || e.message, "error"); } } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -812,27 +808,19 @@ export function EmployeeDashboard() {
       { label: "Rejected",       value: maintenanceReqs.filter(m => m.status === "Rejected").length,    color: "text-red-600" },
     ];
 
-    const handleMaintSubmit = (e: React.FormEvent) => {
+    const handleMaintSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!maintForm.assetId || !maintForm.description) {
         triggerToast("Please select an asset and describe the issue", "error"); return;
       }
-      const asset = myAssets.find(a => a.id === maintForm.assetId);
-      const newReq = {
-        id: `MNT-${100 + maintenanceReqs.length}`,
-        assetId: maintForm.assetId,
-        assetName: asset?.name ?? "Unknown Asset",
-        issue: maintForm.description,
-        issueType: maintForm.issueType,
-        priority: maintForm.priority,
-        status: "Pending",
-        createdOn: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        technician: "Unassigned",
-        cost: "—",
-      };
-      setMaintenanceReqs((prev: any) => [newReq, ...prev]);
-      setMaintForm({ assetId: "", issueType: "Hardware", priority: "Medium", description: "", notes: "" });
-      triggerToast(`Maintenance request ${newReq.id} submitted`, "success");
+      try {
+        await axios.post('/api/me/maintenance', maintForm);
+        setMaintForm({ assetId: "", issueType: "Hardware", priority: "Medium", description: "", notes: "" });
+        triggerToast(`Maintenance request submitted`, "success");
+        refetchMaint();
+      } catch (err: any) {
+        triggerToast(err.response?.data?.error || err.message, "error");
+      }
     };
 
     return (
@@ -1020,7 +1008,7 @@ export function EmployeeDashboard() {
                       <td className="py-3"><StatusBadge status={req.status} /></td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {req.status === "Pending" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Transfer Request?", description: `Cancel transfer request for ${req.assetName}?`, onConfirm: () => { setTransferReqs((prev: any) => prev.map((t: any) => t.id === req.id ? { ...t, status: "Rejected" } : t)); triggerToast("Transfer request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Transfer Request?", description: `Cancel transfer request for ${req.assetName}?`, onConfirm: async () => { try { await axios.patch(`/api/me/transfers/${req.id}/cancel`); triggerToast("Transfer request cancelled", "success"); refetchTransfer(); } catch (e: any) { triggerToast(e.response?.data?.error || e.message, "error"); } } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -1126,7 +1114,7 @@ export function EmployeeDashboard() {
                       <td className="py-3 text-neutral-500">{req.approvedBy}</td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {req.status === "Pending" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Return Request?", description: `Cancel the return request for ${req.assetName}?`, onConfirm: () => { setReturnReqs((prev: any) => prev.map((r: any) => r.id === req.id ? { ...r, status: "Rejected" } : r)); triggerToast("Return request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Return Request?", description: `Cancel the return request for ${req.assetName}?`, onConfirm: async () => { try { await axios.patch(`/api/me/returns/${req.id}/cancel`); triggerToast("Return request cancelled", "success"); refetchReturn(); } catch (e: any) { triggerToast(e.response?.data?.error || e.message, "error"); } } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -1225,9 +1213,9 @@ export function EmployeeDashboard() {
           <div className="w-16 h-16 rounded-full bg-neutral-950 text-white font-extrabold text-2xl flex items-center justify-center shrink-0">{userInitials}</div>
           <div className="flex-1 space-y-1 text-center md:text-left">
             <h3 className="text-base font-extrabold text-neutral-900">{userName}</h3>
-            <p className="text-xs text-neutral-500 font-medium">{EMPLOYEE.id} · {EMPLOYEE.dept}</p>
-            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email || EMPLOYEE.email}</p>
-            <p className="text-[10px] text-neutral-400">Joined: {EMPLOYEE.joined}</p>
+            <p className="text-xs text-neutral-500 font-medium">{currentUser?.id.substring(0,8) || "EMP-001"} · {currentUser?.role || "Employee"}</p>
+            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email}</p>
+            <p className="text-[10px] text-neutral-400">Joined: 2024</p>
           </div>
         </div>
 
