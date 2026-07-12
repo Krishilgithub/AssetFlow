@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
+import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -506,9 +506,9 @@ export function EmployeeDashboard() {
         {/* Greeting */}
         <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-neutral-950 text-white font-extrabold text-lg flex items-center justify-center shrink-0">{EMPLOYEE.initials}</div>
+            <div className="w-12 h-12 rounded-full bg-neutral-950 text-white font-extrabold text-lg flex items-center justify-center shrink-0">{userInitials}</div>
             <div>
-              <h2 className="text-sm font-extrabold text-neutral-900">Good morning, {EMPLOYEE.name.split(" ")[0]} 👋</h2>
+              <h2 className="text-sm font-extrabold text-neutral-900">Good morning, {userName.split(" ")[0]} 👋</h2>
               <p className="text-[11px] text-neutral-500 font-medium mt-0.5">{EMPLOYEE.dept} · {EMPLOYEE.id}</p>
             </div>
           </div>
@@ -1203,7 +1203,7 @@ export function EmployeeDashboard() {
           <div className="flex-1 space-y-1 text-center md:text-left">
             <h3 className="text-base font-extrabold text-neutral-900">{userName}</h3>
             <p className="text-xs text-neutral-500 font-medium">{EMPLOYEE.id} · {EMPLOYEE.dept}</p>
-            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email || EMPLOYEE.email} · {EMPLOYEE.phone}</p>
+            <p className="text-[10px] text-neutral-400 mt-1">{currentUser?.email || EMPLOYEE.email}</p>
             <p className="text-[10px] text-neutral-400">Joined: {EMPLOYEE.joined}</p>
           </div>
         </div>
@@ -1377,6 +1377,7 @@ export function EmployeeDashboard() {
         <div className="p-3 border-t border-neutral-100 space-y-2">
           <button
             onClick={async () => {
+              clearCurrentUser();
               try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
               window.location.href = "/login-in";
             }}

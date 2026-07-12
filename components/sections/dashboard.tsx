@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+<<<<<<< HEAD
 import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
 import { useQueryClient } from "@tanstack/react-query";
+=======
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
+>>>>>>> a488c89 (name fixes)
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -1986,6 +1990,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           {/* Sign Out link */}
           <button
             onClick={async () => {
+              clearCurrentUser();
               try {
                 await fetch('/api/auth/logout', { method: 'POST' });
               } catch {}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { useDeptOverview, useApproveMutation, useRejectMutation, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
+import { useDeptOverview, useApproveMutation, useRejectMutation, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -1298,6 +1298,7 @@ export function DeptHeadDashboard() {
         <div className="p-3 border-t border-neutral-100 shrink-0 space-y-2">
           <button
             onClick={async () => {
+              clearCurrentUser();
               try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
               window.location.href = "/login-in";
             }}

@@ -1,5 +1,6 @@
 import { prisma } from '../db';
 import { z } from 'zod';
+import { NotificationService } from '@/lib/services/NotificationService';
 
 const uuidRegex = /^[0-9a-fA-F-]{36}$/;
 
@@ -140,7 +141,7 @@ export class AssetService {
 
   static async allocateAsset(data: z.infer<typeof allocateAssetSchema>, currentUserId: string) {
     // Transaction to ensure data consistency
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const asset = await tx.assets.findUnique({ where: { id: data.assetId } });
       if (!asset) throw new Error("Asset not found");
       if (asset.status !== 'Available') throw new Error(`Asset is currently ${asset.status}`);
@@ -149,7 +150,7 @@ export class AssetService {
         data: {
           asset_id: data.assetId,
           allocated_to: data.allocatedToId,
-          allocated_by: data.allocatedById, // Use provided or currentUserId
+          allocated_by: data.allocatedById,
           expected_return_date: data.expectedReturnDate ? new Date(data.expectedReturnDate) : undefined,
           notes: data.notes,
           status: 'Active',
@@ -173,7 +174,30 @@ export class AssetService {
 
       return allocation;
     });
+
+    // ── In-app notification to the employee (non-blocking) ───────────────
+    Promise.resolve().then(async () => {
+      try {
+        const [asset, employee] = await Promise.all([
+          prisma.assets.findUnique({ where: { id: data.assetId }, select: { name: true } }),
+          prisma.users.findUnique({ where: { id: data.allocatedToId }, select: { first_name: true } }),
+        ]);
+        const assetName = asset?.name || 'an asset';
+        const firstName = employee?.first_name || 'there';
+
+        await NotificationService.create(data.allocatedToId, {
+          title: `Asset Allocated: ${assetName}`,
+          message: `Hi ${firstName}, the asset "${assetName}" has been allocated to you. You can view it under My Assets in your dashboard.`,
+          type: 'info',
+        });
+      } catch (err) {
+        console.error('[allocateAsset] notification error:', err);
+      }
+    });
+
+    return result;
   }
+
 
   static async returnAsset(allocationId: string, currentUserId: string, condition?: string) {
     return prisma.$transaction(async (tx) => {

@@ -9,6 +9,7 @@ import { ViewIcon, ViewOffIcon, AsteriskIcon } from "@hugeicons/core-free-icons"
 import GoogleIcon from "@/components/icons/google";
 import { useGoogleLogin } from '@react-oauth/google';
 import toast, { Toaster } from "react-hot-toast";
+import { saveCurrentUser } from "@/lib/hooks/useDashboard";
 
 export function LoginSection() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export function LoginSection() {
       } else {
         toast.success("Welcome back!");
         const role = data.user?.role || 'Employee';
+        saveCurrentUser(data.user);
         if (role === 'Admin') {
           router.push('/dashboard/admin');
         } else if (role === 'Asset Manager') {
@@ -70,6 +72,7 @@ export function LoginSection() {
         if (res.ok) {
            toast.success("Logged in successfully!");
            const role = data.user?.role || 'Employee';
+           saveCurrentUser(data.user);
            if (role === 'Admin') {
              router.push('/dashboard/admin');
            } else if (role === 'Asset Manager') {

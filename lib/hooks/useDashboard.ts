@@ -326,14 +326,60 @@ export async function downloadReport(format: 'assets' | 'allocations' | 'transfe
   window.URL.revokeObjectURL(url);
 }
 
-export function useCurrentUser() {
-  return useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const { data } = await axios.get('/api/auth/me');
-      return data.user;
-    },
-    retry: false,
-  });
+
+// ─── Auth User Helpers ────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
 }
 
+/** Call this right after a successful login or signup response. */
+export function saveCurrentUser(user: AuthUser) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('assetflow_user', JSON.stringify(user));
+  }
+}
+
+/** Clear persisted user on logout. */
+export function clearCurrentUser() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('assetflow_user');
+  }
+}
+
+export function useCurrentUser() {
+  // Read localStorage synchronously so the name is available on the very first render
+  const getStored = (): AuthUser | undefined => {
+    if (typeof window === 'undefined') return undefined;
+    try {
+      const raw = localStorage.getItem('assetflow_user');
+      return raw ? (JSON.parse(raw) as AuthUser) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  return useQuery<AuthUser>({
+    queryKey: ['currentUser'],
+    // initialData seeds the cache synchronously — no loading flash
+    initialData: getStored,
+    queryFn: async () => {
+      // Return stored value if available (avoids any network call mid-session)
+      const stored = getStored();
+      if (stored) return stored;
+
+      // First visit after login or localStorage cleared — fetch from cookie-backed API
+      const { data } = await axios.get('/api/auth/me');
+      if (data?.user) {
+        saveCurrentUser(data.user);
+      }
+      return data.user as AuthUser;
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 10, // 10-min cache — user data doesn't change mid-session
+  });
+}

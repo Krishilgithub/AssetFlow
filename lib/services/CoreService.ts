@@ -1,6 +1,8 @@
-import { prisma } from '../db';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import * as argon2 from 'argon2';
+import { EmailService } from '@/lib/auth/services/EmailService';
+import { NotificationService } from '@/lib/services/NotificationService';
 
 const uuidRegex = /^[0-9a-fA-F-]{36}$/;
 
@@ -112,6 +114,18 @@ export class CoreService {
         performed_by: currentUserId || undefined,
       }
     });
+
+    // ── Fire email + in-app notification (non-blocking) ────────────────
+    // We pass the plain-text tempPassword before it's hashed so the email
+    // can include it for the employee's first login.
+    Promise.all([
+      EmailService.sendEmployeeWelcome(newUser.email, newUser.first_name, tempPassword),
+      NotificationService.create(newUser.id, {
+        title: 'Welcome to AssetFlow! 👋',
+        message: `Hi ${newUser.first_name}, your account has been created by an administrator. You can now log in and explore your workspace.`,
+        type: 'info',
+      }),
+    ]).catch((err) => console.error('[createEmployee] notification/email error:', err));
 
     return newUser;
   }

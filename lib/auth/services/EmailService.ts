@@ -91,5 +91,60 @@ export const EmailService = {
       </div>
     `;
     return this.sendEmail(email, 'AssetFlow - Account Temporarily Locked', html);
+  },
+
+  /**
+   * Sent when an admin creates a new employee account.
+   * Includes login credentials so the employee can sign in immediately.
+   */
+  async sendEmployeeWelcome(email: string, firstName: string, tempPassword: string) {
+    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login-in`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="display: inline-block; width: 40px; height: 40px; background: #000; border-radius: 8px; font-size: 24px; line-height: 40px; color: #fff; font-weight: 900;">✳</span>
+          <h2 style="color: #111; margin-top: 12px;">You've been added to AssetFlow</h2>
+        </div>
+        <p style="color: #555; font-size: 16px;">Hi ${firstName},</p>
+        <p style="color: #555; font-size: 16px;">Your administrator has created an AssetFlow account for you. Use the credentials below to sign in for the first time.</p>
+        <div style="background: #f5f5f5; border-radius: 8px; padding: 20px; margin: 24px 0;">
+          <p style="margin: 0 0 8px; font-size: 14px; color: #777; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Your Credentials</p>
+          <p style="margin: 0 0 4px; font-size: 15px; color: #333;"><strong>Email:</strong> ${email}</p>
+          <p style="margin: 0; font-size: 15px; color: #333;"><strong>Temporary Password:</strong> <span style="font-family: monospace; font-size: 16px; background: #e0e0e0; padding: 2px 8px; border-radius: 4px;">${tempPassword}</span></p>
+        </div>
+        <p style="color: #d9534f; font-size: 13px;">⚠️ Please change your password after your first login.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${loginUrl}" style="display: inline-block; padding: 12px 28px; font-size: 15px; font-weight: bold; color: #fff; background-color: #000; text-decoration: none; border-radius: 8px;">Sign In to AssetFlow</a>
+        </div>
+        <p style="color: #aaa; font-size: 12px; text-align: center;">If you weren't expecting this email, please contact your administrator.</p>
+      </div>
+    `;
+    return this.sendEmail(email, `You've been added to AssetFlow — Your Login Credentials`, html);
+  },
+
+  /**
+   * Sent when an asset is allocated to an employee.
+   */
+  async sendAssetAllocated(email: string, firstName: string, assetName: string) {
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/employee`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="display: inline-block; width: 40px; height: 40px; background: #000; border-radius: 8px; font-size: 24px; line-height: 40px; color: #fff; font-weight: 900;">✳</span>
+          <h2 style="color: #111; margin-top: 12px;">Asset Allocated to You</h2>
+        </div>
+        <p style="color: #555; font-size: 16px;">Hi ${firstName},</p>
+        <p style="color: #555; font-size: 16px;">An administrator has allocated the following asset to you:</p>
+        <div style="background: #f5f5f5; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+          <p style="margin: 0; font-size: 20px; font-weight: bold; color: #111;">📦 ${assetName}</p>
+        </div>
+        <p style="color: #555; font-size: 14px;">You can view all your assigned assets in your employee dashboard.</p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; padding: 12px 28px; font-size: 15px; font-weight: bold; color: #fff; background-color: #000; text-decoration: none; border-radius: 8px;">View My Assets</a>
+        </div>
+      </div>
+    `;
+    return this.sendEmail(email, `AssetFlow — ${assetName} has been allocated to you`, html);
   }
 };
+
