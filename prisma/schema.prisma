@@ -471,3 +471,21 @@ model oauth_accounts {
 
   @@unique([provider, provider_user_id])
 }
+
+model organization_settings {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_name String @default("AssetFlow Inc.") @db.VarChar(255)
+  tax_id   String @default("TX-9428-11A") @db.VarChar(50)
+  email    String @default("admin@company.com") @db.VarChar(255)
+  address  String @default("Market St, San Francisco, CA") @db.VarChar(500)
+
+  enable_email_alerts    Boolean @default(true)
+  enable_audit_reminders Boolean @default(true)
+  enable_warranty_alerts Boolean @default(true)
+
+  min_password_length Int    @default(12)
+  session_timeout     Int    @default(30)
+  backup_schedule     String @default("Every 24 Hours") @db.VarChar(50)
+
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}

@@ -9,13 +9,30 @@ import { ViewIcon, ViewOffIcon, AsteriskIcon } from "@hugeicons/core-free-icons"
 import GoogleIcon from "@/components/icons/google";
 import { useGoogleLogin } from '@react-oauth/google';
 import toast, { Toaster } from "react-hot-toast";
-import { saveCurrentUser } from "@/lib/hooks/useDashboard";
+import { saveCurrentUser, AuthUser } from "@/lib/hooks/useDashboard";
+import { useEffect } from "react";
 
 export function LoginSection() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
+  useEffect(() => {
+    const raw = localStorage.getItem('assetflow_user');
+    if (raw) {
+      try {
+        const user = JSON.parse(raw) as AuthUser;
+        if (user && user.role) {
+          const role = user.role;
+          if (role === 'Admin') router.push('/dashboard/admin');
+          else if (role === 'Asset Manager') router.push('/dashboard/asset-manager');
+          else if (role === 'Department Head') router.push('/dashboard/department-head');
+          else router.push('/dashboard/employee');
+        }
+      } catch (e) {}
+    }
+  }, [router]);
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''

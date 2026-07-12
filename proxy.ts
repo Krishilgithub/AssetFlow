@@ -14,10 +14,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login-in', request.url));
   }
 
-  if ((request.nextUrl.pathname === '/login-in' || request.nextUrl.pathname === '/sign-up') && token) {
-     return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
+  // Client-side useEffect handles role-based redirection from login/sign-up
   return NextResponse.next();
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
+import { useState, useEffect } from "react";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser, useSettings, useUpdateSettings, usePurgeAssets } from "@/lib/hooks/useDashboard";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
@@ -38,6 +38,7 @@ import {
   Folder01Icon,
   MoreHorizontalIcon,
   Download01Icon,
+  Menu01Icon,
 } from "@hugeicons/core-free-icons";
 
 // Import shadcn/ui Table components
@@ -267,10 +268,23 @@ const CustomHeatmap = () => {
 };
 
 export function DashboardSection({ initialRole = "Admin" }: { initialRole?: string }) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const { data: kpis } = useDashboardKPIs();
   const { data: chartsData } = useDashboardCharts();
   const { data: currentUser } = useCurrentUser();
   const queryClient = useQueryClient();
+  
+  // Settings Hooks
+  const { data: settings, isLoading: isSettingsLoading } = useSettings();
+  const updateSettings = useUpdateSettings();
+  const purgeAssets = usePurgeAssets();
 
   const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : (initialRole === "Admin" ? "Alex Dupont" : "Priya Shah");
   const userInitials = currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() : (initialRole === "Admin" ? "AD" : "PS");
@@ -503,7 +517,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
     const { type, data } = selectedItem;
 
     return (
-      <div className="fixed inset-y-0 right-0 w-[480px] bg-white border-l border-neutral-200 shadow-2xl z-50 flex flex-col transition-all duration-300">
+      <div className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-white border-l border-neutral-200 shadow-2xl z-50 flex flex-col transition-all duration-300">
         {/* Drawer Header */}
         <div className="h-16 px-6 border-b border-neutral-100 flex items-center justify-between">
           <div>
@@ -962,7 +976,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             </div>
 
             <div className="mt-2">
-              <Table>
+              <div className="overflow-x-auto"><Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-neutral-100">
                     <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider h-8">Subject / Initiative</TableHead>
@@ -1013,7 +1027,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+              </Table></div>
               {pendingApprovals.length === 0 && (
                 <div className="text-center py-8 text-neutral-400">
                   <p className="text-sm font-semibold">No pending approvals</p>
@@ -1138,7 +1152,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       </div>
 
       <div className="mt-2">
-        <Table>
+        <div className="overflow-x-auto"><Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-neutral-100">
               <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Department Name</TableHead>
@@ -1194,7 +1208,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></div>
         {departments.filter((d) => (statusFilter === "All" || d.status === statusFilter) && d.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="text-center py-8 text-neutral-400">
             <p className="text-sm font-semibold">No departments found</p>
@@ -1243,7 +1257,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       </div>
 
       <div className="mt-2">
-        <Table>
+        <div className="overflow-x-auto"><Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-neutral-100">
               <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Employee Name</TableHead>
@@ -1281,7 +1295,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></div>
         {employees.filter((e) => (deptFilter === "All" || e.dept === deptFilter) && (roleFilter === "All" || e.role === roleFilter) && e.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
           <div className="text-center py-8 text-neutral-400">
             <p className="text-sm font-semibold">No employees found</p>
@@ -1447,7 +1461,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           </button>
         </div>
         <div className="mt-2">
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-neutral-100">
                 <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Asset ID</TableHead>
@@ -1519,7 +1533,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table></div>
         </div>
       </div>
       </div>
@@ -1561,7 +1575,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       </div>
 
       <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
-        <Table>
+        <div className="overflow-x-auto"><Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-neutral-100">
               <TableHead className="font-bold text-neutral-400 text-xs uppercase tracking-wider">Audit Name</TableHead>
@@ -1601,7 +1615,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></div>
       </div>
     </div>
   );
@@ -1830,29 +1844,48 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <span className="text-neutral-500 font-bold text-xs">{expandedSettings.org ? "▲" : "▼"}</span>
         </div>
         {expandedSettings.org && (
-          <div className="p-6 space-y-4 text-xs">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Organization Name</label>
-                <input type="text" defaultValue="AssetFlow Inc." className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Corporate Registry ID (Tax ID)</label>
-                <input type="text" defaultValue="TX-9428-11A" className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Primary Business Email</label>
-                <input type="email" defaultValue="admin@company.com" className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Business Address</label>
-                <input type="text" defaultValue="Market St, San Francisco, CA" className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-            </div>
-            <button onClick={() => triggerToast("Organization details saved", "success")} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors">
-              Save Details
-            </button>
-          </div>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              updateSettings.mutate({
+                org_name: fd.get('org_name'),
+                tax_id: fd.get('tax_id'),
+                email: fd.get('email'),
+                address: fd.get('address'),
+              });
+              triggerToast("Organization details saved", "success");
+            }}
+            className="p-6 space-y-4 text-xs"
+          >
+            {isSettingsLoading ? (
+              <div className="text-center py-4 text-neutral-400 animate-pulse">Loading settings...</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Organization Name</label>
+                    <input name="org_name" type="text" defaultValue={settings?.org_name || "AssetFlow Inc."} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Corporate Registry ID (Tax ID)</label>
+                    <input name="tax_id" type="text" defaultValue={settings?.tax_id || "TX-9428-11A"} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Primary Business Email</label>
+                    <input name="email" type="email" defaultValue={settings?.email || "admin@company.com"} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Business Address</label>
+                    <input name="address" type="text" defaultValue={settings?.address || "Market St, San Francisco, CA"} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                </div>
+                <button type="submit" disabled={updateSettings.isPending} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors disabled:opacity-50">
+                  {updateSettings.isPending ? "Saving..." : "Save Details"}
+                </button>
+              </>
+            )}
+          </form>
         )}
       </div>
 
@@ -1872,20 +1905,30 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <div className="p-6 space-y-4 text-xs">
             <div className="space-y-3">
               {[
-                { title: "Enable Email Alerts", desc: "Receive immediate notifications on checkouts and transfers requests" },
-                { title: "Enable Audit Reminders", desc: "Weekly reminder updates on pending physical verification schedules" },
-                { title: "Hardware Warranty Alerts", desc: "Flag items whose coverage dates expire in less than 30 days" },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 border border-neutral-50 rounded-lg">
-                  <div>
-                    <h5 className="font-bold text-neutral-800">{item.title}</h5>
-                    <p className="text-[10px] text-neutral-400 mt-0.5 font-medium">{item.desc}</p>
+                { title: "Enable Email Alerts", desc: "Receive immediate notifications on checkouts and transfers requests", key: "enable_email_alerts" },
+                { title: "Enable Audit Reminders", desc: "Weekly reminder updates on pending physical verification schedules", key: "enable_audit_reminders" },
+                { title: "Hardware Warranty Alerts", desc: "Flag items whose coverage dates expire in less than 30 days", key: "enable_warranty_alerts" },
+              ].map((item, idx) => {
+                const isActive = settings ? (settings as any)[item.key] : true;
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3 border border-neutral-50 rounded-lg">
+                    <div>
+                      <h5 className="font-bold text-neutral-800">{item.title}</h5>
+                      <p className="text-[10px] text-neutral-400 mt-0.5 font-medium">{item.desc}</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        updateSettings.mutate({ [item.key]: !isActive });
+                        triggerToast(`${item.title} ${!isActive ? 'enabled' : 'disabled'}`, "success");
+                      }}
+                      className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${isActive ? 'bg-black' : 'bg-neutral-300'}`}
+                      disabled={updateSettings.isPending}
+                    >
+                      <span className={`absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${isActive ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
                   </div>
-                  <button className="relative w-9 h-5 rounded-full transition-colors duration-200 bg-black">
-                    <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full translate-x-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -1904,27 +1947,47 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <span className="text-neutral-500 font-bold text-xs">{expandedSettings.security ? "▲" : "▼"}</span>
         </div>
         {expandedSettings.security && (
-          <div className="p-6 space-y-4 text-xs">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Minimum Password Length</label>
-                <input type="number" defaultValue={12} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Session Timeout (Minutes)</label>
-                <input type="number" defaultValue={30} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
-              </div>
-              <div className="space-y-1">
-                <label className="font-semibold text-neutral-800">Cloud Backup Schedule</label>
-                <select className="w-full px-3 py-2 border border-neutral-250 rounded-lg bg-white">
-                  <option>Every 24 Hours</option>
-                  <option>Every 12 Hours</option>
-                  <option>Real-time sync</option>
-                </select>
-              </div>
-            </div>
-            <button onClick={() => triggerToast("Security parameters applied", "success")} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors">Apply Security</button>
-          </div>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              updateSettings.mutate({
+                min_password_length: Number(fd.get('min_password_length')),
+                session_timeout: Number(fd.get('session_timeout')),
+                backup_schedule: fd.get('backup_schedule'),
+              });
+              triggerToast("Security parameters applied", "success");
+            }}
+            className="p-6 space-y-4 text-xs"
+          >
+            {isSettingsLoading ? (
+              <div className="text-center py-4 text-neutral-400 animate-pulse">Loading settings...</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Minimum Password Length</label>
+                    <input name="min_password_length" type="number" defaultValue={settings?.min_password_length || 12} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Session Timeout (Minutes)</label>
+                    <input name="session_timeout" type="number" defaultValue={settings?.session_timeout || 30} className="w-full px-3 py-2 border border-neutral-250 rounded-lg focus:outline-none focus:ring-1 focus:ring-black" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-neutral-800">Cloud Backup Schedule</label>
+                    <select name="backup_schedule" defaultValue={settings?.backup_schedule || "Every 24 Hours"} className="w-full px-3 py-2 border border-neutral-250 rounded-lg bg-white">
+                      <option value="Every 24 Hours">Every 24 Hours</option>
+                      <option value="Every 12 Hours">Every 12 Hours</option>
+                      <option value="Real-time sync">Real-time sync</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" disabled={updateSettings.isPending} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors disabled:opacity-50">
+                  {updateSettings.isPending ? "Applying..." : "Apply Security"}
+                </button>
+              </>
+            )}
+          </form>
         )}
       </div>
 
@@ -1943,12 +2006,22 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                 isOpen: true,
                 title: "Delete All Assets Data?",
                 description: "Are you sure you want to purge all company physical hardware allocations log? This action is permanent and cannot be undone.",
-                onConfirm: () => triggerToast("All asset files deleted", "error")
+                onConfirm: () => {
+                  purgeAssets.mutate(undefined, {
+                    onSuccess: () => {
+                      triggerToast("All asset files deleted", "success");
+                    },
+                    onError: () => {
+                      triggerToast("Failed to purge asset files", "error");
+                    }
+                  });
+                }
               });
             }}
-            className="px-3.5 py-2 border border-red-200 hover:bg-red-50 text-red-650 rounded-lg"
+            disabled={purgeAssets.isPending}
+            className="px-3.5 py-2 border border-red-200 hover:bg-red-50 text-red-650 rounded-lg disabled:opacity-50"
           >
-            Clear Assets Ledger
+            {purgeAssets.isPending ? "Purging..." : "Clear Assets Ledger"}
           </button>
           <button
             onClick={() => {
@@ -1970,11 +2043,19 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
 
   return (
     <div className="flex h-screen bg-[#F9F9F9] text-neutral-900 font-sans overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-40"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar - Collapsible */}
       <motion.div
-        animate={{ width: isSidebarOpen ? 260 : 76 }}
+        animate={{ width: isMobile ? (isSidebarOpen ? 260 : 0) : (isSidebarOpen ? 260 : 76) }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="h-full bg-white border-r border-neutral-200/80 flex flex-col justify-between z-20 shrink-0"
+        className={`h-full bg-white border-r border-neutral-200/80 flex flex-col justify-between z-50 shrink-0 absolute md:relative overflow-hidden ${isMobile && !isSidebarOpen ? 'invisible' : 'visible'}`}
       >
         <div className="flex flex-col">
           {/* Logo Header */}
@@ -2070,23 +2151,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-neutral-100 flex flex-col gap-3 shrink-0">
-          {/* Settings link */}
-          <Link
-            href="#"
-            onClick={() => setActiveTab("ESG Configuration")}
-            className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all group ${
-              activeTab === "ESG Configuration"
-                ? "bg-neutral-950 text-white font-medium"
-                : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={activeTab === "ESG Configuration" ? "text-white" : "text-neutral-400 group-hover:text-neutral-600"}>
-                <HugeiconsIcon icon={Settings01Icon} size={20} />
-              </div>
-              {isSidebarOpen && <span className="text-sm">Settings</span>}
-            </div>
-          </Link>
+
 
           {/* Sign Out link */}
           <button
@@ -2129,9 +2194,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       {/* Main Dashboard Area */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto">
         {/* Top Header */}
-        <header className="h-16 border-b border-neutral-200/60 bg-white px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4 w-96">
-            <div className="relative w-full">
+        <header className="h-16 border-b border-neutral-200/60 bg-white px-4 md:px-8 flex items-center justify-between shrink-0 gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 md:w-96">
+            <button className="md:hidden p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-500 shrink-0" onClick={() => setIsSidebarOpen(true)}>
+              <HugeiconsIcon icon={Menu01Icon} size={20} />
+            </button>
+            <div className="relative w-full max-w-md hidden sm:block">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
                 <HugeiconsIcon icon={Search01Icon} size={18} />
               </span>
@@ -2166,7 +2234,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         </header>
 
         {/* Dynamic Panel Container */}
-        <main className="flex-1 p-8 space-y-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl w-full mx-auto overflow-y-auto">
           {/* Header Title with Breadcrumbs */}
           <div className="flex flex-col gap-1.5 border-b border-neutral-200/50 pb-5">
             <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">

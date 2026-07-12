@@ -3,6 +3,46 @@ import axios from 'axios';
 
 // ─── Admin Dashboard Hooks ────────────────────────────────────────────────────
 
+export function useSettings() {
+  return useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/settings');
+      return data;
+    },
+  });
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (settingsData: any) => {
+      const { data } = await axios.put('/api/settings', settingsData);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+  });
+}
+
+export function usePurgeAssets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.delete('/api/settings/purge');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['assetsList'] });
+      queryClient.invalidateQueries({ queryKey: ['allocations'] });
+      queryClient.invalidateQueries({ queryKey: ['audits'] });
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+    },
+  });
+}
+
 export function useDashboardKPIs() {
   return useQuery({
     queryKey: ['dashboard', 'kpis'],

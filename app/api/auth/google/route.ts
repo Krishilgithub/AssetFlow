@@ -13,14 +13,17 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function POST(req: Request) {
   try {
-    const { credential } = await req.json();
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const { credential } = await req.json(); // credential here is actually the access_token
+    
+    // Fetch user info from Google
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${credential}` }
     });
     
-    const payload = ticket.getPayload();
-    if (!payload || !payload.email) throw new Error('Invalid Google token');
+    if (!userRes.ok) throw new Error('Failed to fetch user profile from Google');
+    
+    const payload = await userRes.json();
+    if (!payload || !payload.email) throw new Error('Invalid Google user payload');
 
     let user = await prisma.users.findUnique({
       where: { email: payload.email },
