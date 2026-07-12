@@ -12,6 +12,7 @@ import {
   ArrowUpDownIcon,
   ToolsIcon,
   Calendar01Icon,
+  ClipboardListIcon,
 } from "@hugeicons/core-free-icons";
 
 export default function DashboardLandingPage() {
@@ -39,7 +40,7 @@ export default function DashboardLandingPage() {
       </div>
 
       {/* Role Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
         {/* Admin Card */}
         <Link
           href="/dashboard/admin"
@@ -133,6 +134,53 @@ export default function DashboardLandingPage() {
               Open Asset Manager Console
             </span>
             <div className="w-7 h-7 bg-neutral-700 text-white rounded-lg flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+            </div>
+          </div>
+        </Link>
+        {/* Employee Card */}
+        <Link
+          href="/dashboard/employee"
+          className="group bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-400 hover:shadow-lg transition-all duration-200 flex flex-col gap-6"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-12 h-12 bg-neutral-500 text-white rounded-xl flex items-center justify-center text-lg font-extrabold">
+              JR
+            </div>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider border border-neutral-200 px-2 py-0.5 rounded-full">
+              Employee
+            </span>
+          </div>
+
+          <div>
+            <h2 className="text-base font-extrabold text-neutral-900 tracking-tight">
+              Employee Portal
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1.5 font-medium leading-relaxed">
+              View assigned assets, book shared resources, raise maintenance
+              requests, and track transfer &amp; return requests.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 text-[10px] text-neutral-500 font-semibold">
+            {[
+              { icon: PackageIcon,       label: "My Assigned Assets" },
+              { icon: Calendar01Icon,    label: "Resource Booking" },
+              { icon: ToolsIcon,         label: "Maintenance Requests" },
+              { icon: ClipboardListIcon, label: "Transfer & Return Requests" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <HugeiconsIcon icon={item.icon} size={12} className="text-neutral-400" />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+            <span className="text-xs font-bold text-neutral-900">
+              Open Employee Portal
+            </span>
+            <div className="w-7 h-7 bg-neutral-500 text-white rounded-lg flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
               <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
             </div>
           </div>
