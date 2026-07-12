@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+<<<<<<< HEAD
 import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
+=======
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useMyProfile } from "@/lib/hooks/useDashboard";
+>>>>>>> 7c75e54fc0c1afe836f77ea698672520e4e64cd2
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
 import { AddEmployeeModal } from "@/components/modals/add-employee-modal";
+import { AddCategoryModal } from "@/components/modals/add-category-modal";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -271,6 +276,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : (initialRole === "Admin" ? "Alex Dupont" : "Priya Shah");
   const userInitials = currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() : (initialRole === "Admin" ? "AD" : "PS");
 
+  const { data: profile } = useMyProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
 
@@ -279,8 +285,10 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const departments = departmentsData || [];
   const { data: employeesData } = useEmployees();
   const employees = employeesData || [];
-  // Mock State for Categories
-  const [categories, setCategories] = useState<any[]>([]);
+  // Categories Data
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData || [];
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
 
   // Mock State for Assets List
   const { data: assetsData } = useAssetsList();
@@ -296,10 +304,28 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const { data: auditsData } = useAudits();
   const auditsList = auditsData || [];
 
-  // Mock State for Pending Approvals
+  // Pending Approvals - normalized from live transfers and allocations
   const pendingApprovals = [
-    ...transfersList.filter((t: any) => t.status === 'Pending').map((t: any) => ({ ...t, type: 'Transfer' })),
-    ...allocationsList.filter((a: any) => a.status === 'Pending Approval').map((a: any) => ({ ...a, type: 'Allocation' }))
+    ...transfersList.filter((t: any) => t.status === 'Pending').map((t: any) => ({
+      id: t.id,
+      type: 'Transfer',
+      title: t.assetName || 'Asset Transfer',
+      details: `${t.fromDept} → ${t.toDept}`,
+      requestedBy: t.requestedBy || 'Unknown',
+      initials: (t.requestedBy || 'U').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+      dept: t.fromDept || '',
+      status: t.status,
+    })),
+    ...allocationsList.filter((a: any) => a.status === 'Pending Approval').map((a: any) => ({
+      id: a.id,
+      type: 'Allocation',
+      title: a.assetName || 'Asset Allocation',
+      details: `Allocate to ${a.allocatedTo}`,
+      requestedBy: a.allocatedBy || 'Unknown',
+      initials: (a.allocatedBy || 'U').split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase(),
+      dept: '',
+      status: a.status,
+    }))
   ];
 
   // Mock State for Notifications list
@@ -393,6 +419,8 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState("Overview");
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
+  const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
 
   const { data: activitiesData } = useDashboardActivities();
   const activityLogs = activitiesData || [];
@@ -751,13 +779,13 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Perform common administrator operations shortcuts</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button onClick={() => { setActiveTab("Departments"); triggerToast("Department form opened", "success"); }} className="px-4 py-2 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all flex items-center gap-2">
+          <button onClick={() => setIsAddDepartmentModalOpen(true)} className="px-4 py-2 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all flex items-center gap-2">
             Add Department
           </button>
-          <button onClick={() => { setActiveTab("Employees"); triggerToast("Employee form opened", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
+          <button onClick={() => setIsAddEmployeeModalOpen(true)} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
             Add Employee
           </button>
-          <button onClick={() => { setActiveTab("Categories"); triggerToast("Create Category form opened", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
+          <button onClick={() => { setIsAddCategoryModalOpen(true); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
             Create Category
           </button>
           <button onClick={() => { setActiveTab("Audits"); triggerToast("Audit scope screen loaded", "success"); }} className="px-4 py-2 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700 transition-all">
@@ -909,6 +937,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                   ))}
                 </TableBody>
               </Table>
+              {pendingApprovals.length === 0 && (
+                <div className="text-center py-8 text-neutral-400">
+                  <p className="text-sm font-semibold">No pending approvals</p>
+                  <p className="text-xs mt-1">All transfer and allocation requests have been settled.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -946,7 +980,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
               <p className="text-xs text-neutral-400 mt-0.5 font-medium">Pending corporate compliance reviews</p>
             </div>
             <div className="space-y-4 mt-2">
-              {auditsList.map((audit, idx) => (
+              {auditsList.map((audit: any, idx: number) => (
                 <div key={idx} className="flex items-start justify-between border-b border-neutral-50 pb-3 last:border-0 last:pb-0">
                   <div>
                     <h4 className="text-xs font-semibold text-neutral-900">{audit.name}</h4>
@@ -979,19 +1013,19 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-neutral-100 text-xs">
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">Corporate HQ</h4>
-          <p className="text-neutral-500 mt-2">San Francisco, California</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 124 employees</p>
+          <h4 className="font-bold text-neutral-800">Total Employees</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{employees.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active users in directory</p>
         </div>
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">London Office</h4>
-          <p className="text-neutral-500 mt-2">London, United Kingdom</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 22 employees</p>
+          <h4 className="font-bold text-neutral-800">Departments</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{departments.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active organizational units</p>
         </div>
         <div className="p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB]">
-          <h4 className="font-bold text-neutral-800">APAC Operations Center</h4>
-          <p className="text-neutral-500 mt-2">Singapore Hub</p>
-          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Active Members: 12 employees</p>
+          <h4 className="font-bold text-neutral-800">Total Assets</h4>
+          <p className="text-2xl font-extrabold text-neutral-900 mt-2">{kpis?.totalAssets ?? assetsList.length}</p>
+          <p className="text-[10px] text-neutral-400 mt-1 font-medium">Registered in inventory</p>
         </div>
       </div>
     </div>
@@ -1005,11 +1039,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Department Management</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Configure corporate branches, cost centers, and checkout privileges</p>
         </div>
-        <AddDepartmentModal>
-          <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
-            Add Department
-          </button>
-        </AddDepartmentModal>
+        <button onClick={() => setIsAddDepartmentModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+          Add Department
+        </button>
       </div>
 
       {/* Filters & Search */}
@@ -1086,6 +1118,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             ))}
           </TableBody>
         </Table>
+        {departments.filter((d) => (statusFilter === "All" || d.status === statusFilter) && d.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          <div className="text-center py-8 text-neutral-400">
+            <p className="text-sm font-semibold">No departments found</p>
+            <p className="text-xs mt-1">{searchQuery ? 'Try a different search term.' : 'Add your first department to get started.'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1115,17 +1153,15 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         />
         <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
           <option value="All">All Departments</option>
-          <option value="Engineering">Engineering</option>
-          <option value="IT Operations">IT Operations</option>
-          <option value="Operations">Operations</option>
-          <option value="Human Resources">Human Resources</option>
-          <option value="Finance">Finance</option>
+          {departments.map((dept: any) => (
+            <option key={dept.id} value={dept.name}>{dept.name}</option>
+          ))}
         </select>
         <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} className="px-3 py-1.5 border border-neutral-200 rounded-lg bg-white">
           <option value="All">All Roles</option>
-          <option value="Asset Manager">Asset Manager</option>
-          <option value="Department Head">Department Head</option>
-          <option value="Employee">Employee</option>
+          {Array.from(new Set(employees.map((e: any) => e.role))).map((role: any) => (
+            <option key={role} value={role}>{role}</option>
+          ))}
         </select>
       </div>
 
@@ -1169,6 +1205,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             ))}
           </TableBody>
         </Table>
+        {employees.filter((e) => (deptFilter === "All" || e.dept === deptFilter) && (roleFilter === "All" || e.role === roleFilter) && e.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          <div className="text-center py-8 text-neutral-400">
+            <p className="text-sm font-semibold">No employees found</p>
+            <p className="text-xs mt-1">{searchQuery ? 'Try a different search term.' : 'Add your first employee to get started.'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1181,7 +1223,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Asset Categories</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Configure classification ledgers, warranty thresholds, and custom checklists</p>
         </div>
-        <button onClick={() => triggerToast("Add Category screen opened", "success")} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+        <button onClick={() => setIsAddCategoryModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
           Create Category
         </button>
       </div>
@@ -1283,11 +1325,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Recent Registrations Ledger</h3>
             <p className="text-xs text-neutral-400 mt-0.5 font-medium">Chronological checklist of physical and software logs added to the database</p>
           </div>
-          <AddAssetModal>
-            <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
-              Add Asset
-            </button>
-          </AddAssetModal>
+          <button onClick={() => setIsAddAssetModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+            Add Asset
+          </button>
         </div>
         <div className="mt-2">
           <Table>
@@ -1373,7 +1413,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             </TableRow>
           </TableHeader>
           <TableBody>
-            {auditsList.map((audit) => (
+            {auditsList.map((audit: any) => (
               <TableRow key={audit.id} className="border-neutral-100 hover:bg-neutral-50/50 cursor-pointer" onClick={() => { setSelectedItem({ type: "audit", data: audit }); setDrawerTab("Overview"); setIsDrawerOpen(true); }}>
                 <TableCell className="py-4 text-xs font-bold text-neutral-900">{audit.name}</TableCell>
                 <TableCell className="py-4 text-xs font-medium text-neutral-500">{audit.department}</TableCell>
@@ -1879,12 +1919,25 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           {/* User profile representation */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-neutral-200 border border-neutral-300 flex items-center justify-center font-bold text-neutral-700 shrink-0 text-sm">
+<<<<<<< HEAD
               {userInitials}
             </div>
             {isSidebarOpen && (
               <div className="overflow-hidden">
                 <p className="text-sm font-semibold truncate leading-none mb-1">{userName}</p>
                 <p className="text-xs text-neutral-400 truncate">{initialRole === "Admin" ? "Workspace Admin" : "Asset Manager"}</p>
+=======
+              {profile ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase() || 'U' : 'AD'}
+            </div>
+            {isSidebarOpen && (
+              <div className="overflow-hidden">
+                <p className="text-sm font-semibold truncate leading-none mb-1">
+                  {profile ? `${profile.firstName} ${profile.lastName}` : 'Alex Dupont'}
+                </p>
+                <p className="text-xs text-neutral-400 truncate">
+                  {profile ? profile.role : 'Workspace Admin'}
+                </p>
+>>>>>>> 7c75e54fc0c1afe836f77ea698672520e4e64cd2
               </div>
             )}
           </div>
@@ -1921,9 +1974,17 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
             <div className="h-8 w-px bg-neutral-200"></div>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-neutral-950 text-white rounded-lg flex items-center justify-center text-[10px] font-extrabold uppercase">
+<<<<<<< HEAD
                 {userInitials}
               </div>
               <span className="text-xs font-semibold text-neutral-600">{initialRole === "Admin" ? "Workspace Admin" : "Asset Manager"}</span>
+=======
+                {profile ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase() || 'U' : 'AD'}
+              </div>
+              <span className="text-xs font-semibold text-neutral-600">
+                {profile ? profile.role : 'Workspace Admin'}
+              </span>
+>>>>>>> 7c75e54fc0c1afe836f77ea698672520e4e64cd2
             </div>
           </div>
         </header>
@@ -1971,8 +2032,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
         {renderDetailDrawer()}
         {renderToast()}
         {renderConfirmModal()}
-        <AddEmployeeModal isOpen={isAddEmployeeModalOpen} onClose={() => setIsAddEmployeeModalOpen(false)} />
+        <AddEmployeeModal isOpen={isAddEmployeeModalOpen} onClose={() => setIsAddEmployeeModalOpen(false)} onSuccess={() => triggerToast("Employee added successfully", "success")} />
+        <AddDepartmentModal isOpen={isAddDepartmentModalOpen} onClose={() => setIsAddDepartmentModalOpen(false)} onSuccess={() => triggerToast("Department created successfully", "success")} />
+        <AddAssetModal isOpen={isAddAssetModalOpen} onClose={() => setIsAddAssetModalOpen(false)} onSuccess={() => triggerToast("Asset registered successfully", "success")} />
+        <AddCategoryModal isOpen={isAddCategoryModalOpen} onClose={() => setIsAddCategoryModalOpen(false)} onSuccess={() => triggerToast("Category created successfully", "success")} />
       </div>
     </div>
   );
 }
+

@@ -2,117 +2,309 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export function AddAssetModal({ children, onSuccess }: { children: React.ReactNode, onSuccess?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [tagNumber, setTagNumber] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
-  
+interface AddAssetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+export function AddAssetModal({ isOpen, onClose, onSuccess }: AddAssetModalProps) {
+  const [form, setForm] = useState({
+    name: "",
+    assetTag: "",
+    serialNumber: "",
+    categoryId: "",
+    departmentId: "",
+    locationId: "",
+    purchaseCost: "",
+    purchaseDate: "",
+    notes: "",
+  });
+  const [error, setError] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
 
-  // Fetch reference data (Assuming we have basic endpoints for these)
-  const { data: departments } = useQuery({
+  const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
-    queryFn: async () => (await axios.get("/api/departments")).data
+    queryFn: async () => {
+      const res = await fetch("/api/departments");
+      if (!res.ok) throw new Error("Failed to fetch departments");
+      return res.json();
+    },
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json();
+    },
+  });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ["locations"],
+    queryFn: async () => {
+      const res = await fetch("/api/locations");
+      if (!res.ok) throw new Error("Failed to fetch locations");
+      return res.json();
+    },
   });
 
   const mutation = useMutation({
-    mutationFn: async (newAsset: any) => {
-      const { data } = await axios.post("/api/assets", newAsset);
-      return data;
+    mutationFn: async () => {
+      const payload: Record<string, any> = {
+        name: form.name,
+        assetTag: form.assetTag,
+        categoryId: form.categoryId,
+        departmentId: form.departmentId,
+      };
+      if (form.serialNumber) payload.serialNumber = form.serialNumber;
+      if (form.locationId) payload.locationId = form.locationId;
+      if (form.purchaseCost) payload.purchaseCost = parseFloat(form.purchaseCost);
+      if (form.purchaseDate) payload.purchaseDate = form.purchaseDate;
+      if (form.notes) payload.notes = form.notes;
+
+      const res = await fetch("/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(
+          Array.isArray(errData.error)
+            ? errData.error.map((e: any) => `${e.path?.join(".")}: ${e.message}`).join(", ")
+            : errData.error || "Failed to create asset"
+        );
+      }
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assetsList"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard", "kpis"] });
-      setOpen(false);
-      setName("");
-      setTagNumber("");
-      setCategoryId("");
-      setDepartmentId("");
-      if (onSuccess) onSuccess();
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "charts"] });
+      setForm({ name: "", assetTag: "", serialNumber: "", categoryId: "", departmentId: "", locationId: "", purchaseCost: "", purchaseDate: "", notes: "" });
+      setError(null);
+      onSuccess?.();
+      onClose();
+    },
+    onError: (err: Error) => {
+      setError(err.message);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !tagNumber || !departmentId) return;
-    
-    mutation.mutate({
-      name,
-      assetTag: tagNumber,
-      categoryId: categoryId || "11111111-1111-1111-1111-111111111111", 
-      departmentId: departmentId,
-      locationId: "22222222-2222-2222-2222-222222222222",
-    });
+    setError(null);
+    if (!form.name.trim()) return setError("Asset name is required");
+    if (!form.assetTag.trim()) return setError("Asset tag is required");
+    if (!form.categoryId) return setError("Category is required");
+    if (!form.departmentId) return setError("Department is required");
+    mutation.mutate();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Register New Asset</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Asset Name / Model</Label>
-            <Input
-              id="name"
-              placeholder="e.g. MacBook Pro 16"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={mutation.isPending}
-            />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-neutral-200">
+        <div className="p-6 pb-4 border-b border-neutral-100">
+          <DialogTitle className="text-lg font-bold text-neutral-900 tracking-tight">
+            Register New Asset
+          </DialogTitle>
+          <DialogDescription className="text-sm text-neutral-500 mt-1 font-medium">
+            Add a new physical asset to the inventory registry.
+          </DialogDescription>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Required Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Asset Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g. MacBook Pro 16"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                disabled={mutation.isPending}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Asset Tag <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g. AST-1001"
+                value={form.assetTag}
+                onChange={(e) => setForm((p) => ({ ...p, assetTag: e.target.value }))}
+                disabled={mutation.isPending}
+                className="text-sm"
+              />
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="tag">Asset Tag Number</Label>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+              Serial Number
+            </Label>
             <Input
-              id="tag"
-              placeholder="e.g. AST-1001"
-              value={tagNumber}
-              onChange={(e) => setTagNumber(e.target.value)}
+              placeholder="e.g. SN-2024-XXXX"
+              value={form.serialNumber}
+              onChange={(e) => setForm((p) => ({ ...p, serialNumber: e.target.value }))}
               disabled={mutation.isPending}
+              className="text-sm"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Department Assignment</Label>
-            <Select disabled={mutation.isPending} onValueChange={(val) => setDepartmentId(val || "")} value={departmentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments?.map((dept: any) => (
-                  <SelectItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Category <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.categoryId}
+                onValueChange={(v) => setForm((p) => ({ ...p, categoryId: v ?? "" }))}
+                disabled={mutation.isPending}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.length === 0 && (
+                    <SelectItem value="__none__" disabled>
+                      No categories found
+                    </SelectItem>
+                  )}
+                  {categories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Department <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={form.departmentId}
+                onValueChange={(v) => setForm((p) => ({ ...p, departmentId: v ?? "" }))}
+                disabled={mutation.isPending}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept: any) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {locations.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Location
+              </Label>
+              <Select
+                value={form.locationId}
+                onValueChange={(v) => setForm((p) => ({ ...p, locationId: v ?? "" }))}
+                disabled={mutation.isPending}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Select location (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc: any) => (
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}{loc.city ? ` — ${loc.city}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Purchase Cost ($)
+              </Label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={form.purchaseCost}
+                onChange={(e) => setForm((p) => ({ ...p, purchaseCost: e.target.value }))}
+                disabled={mutation.isPending}
+                className="text-sm"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                Purchase Date
+              </Label>
+              <Input
+                type="date"
+                value={form.purchaseDate}
+                onChange={(e) => setForm((p) => ({ ...p, purchaseDate: e.target.value }))}
+                disabled={mutation.isPending}
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 font-medium">
+              {error}
+            </div>
+          )}
+        </form>
+
+        <DialogFooter className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50">
           <button
-            type="submit"
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
             disabled={mutation.isPending}
-            className="w-full px-3.5 py-2.5 text-sm font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors"
+            className="px-5 py-2 text-xs font-bold bg-black hover:bg-neutral-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {mutation.isPending ? "Registering..." : "Register Asset"}
           </button>
-        </form>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

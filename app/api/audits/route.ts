@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { AuditService, createAuditSchema } from '@/lib/services/AuditService';
 import { z } from 'zod';
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 
 export async function GET() {
   try {
@@ -18,9 +19,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = createAuditSchema.parse(body);
 
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
-    
-    const audit = await AuditService.createAudit(parsed, defaultUserId);
+    const user = await getAuthUser();
+    const audit = await AuditService.createAudit(parsed, user?.id || null);
 
     return NextResponse.json(audit, { status: 201 });
   } catch (error) {

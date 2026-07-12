@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { AssetService, allocateAssetSchema } from '@/lib/services/AssetService';
 import { z } from 'zod';
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 
 export async function GET() {
   try {
@@ -18,9 +19,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = allocateAssetSchema.parse(body);
 
-    const defaultUserId = "00000000-0000-0000-0000-000000000000"; 
-    
-    const allocation = await AssetService.allocateAsset(parsed, defaultUserId);
+    const user = await getAuthUser();
+    const allocation = await AssetService.allocateAsset(parsed, user?.id || '00000000-0000-0000-0000-000000000001');
 
     return NextResponse.json(allocation, { status: 201 });
   } catch (error) {

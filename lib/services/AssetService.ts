@@ -70,7 +70,15 @@ export class AssetService {
     });
   }
 
-  static async createAsset(data: z.infer<typeof createAssetSchema>, currentUserId: string) {
+  static async createAsset(data: z.infer<typeof createAssetSchema>, currentUserId?: string | null) {
+    // location_id is required by the DB; fall back to first available location
+    let locationId = data.locationId;
+    if (!locationId) {
+      const firstLocation = await prisma.locations.findFirst({ where: { is_deleted: false }, select: { id: true } });
+      locationId = firstLocation?.id;
+    }
+    if (!locationId) throw new Error('No location available. Please add a location first.');
+
     const asset = await prisma.assets.create({
       data: {
         name: data.name,
@@ -80,9 +88,9 @@ export class AssetService {
         purchase_date: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
         category_id: data.categoryId,
         department_id: data.departmentId,
-        location_id: data.locationId || "22222222-2222-2222-2222-222222222222",
+        location_id: locationId,
         status: 'Available',
-        created_by: currentUserId,
+        created_by: currentUserId || undefined,
       }
     });
 

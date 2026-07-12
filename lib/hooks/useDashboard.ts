@@ -84,12 +84,35 @@ export function useTransfers() {
 }
 
 export function useAudits() {
-  return useQuery<any[]>({
+  return useQuery({
     queryKey: ['audits'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/audits');
-      return data;
-    },
+      const res = await fetch('/api/audits');
+      if (!res.ok) throw new Error('Failed to fetch audits');
+      return res.json();
+    }
+  });
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/categories');
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      return res.json();
+    }
+  });
+}
+
+export function useLocations() {
+  return useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const res = await fetch('/api/locations');
+      if (!res.ok) throw new Error('Failed to fetch locations');
+      return res.json();
+    }
   });
 }
 
