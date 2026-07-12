@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
-<<<<<<< HEAD
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser } from "@/lib/hooks/useDashboard";
-import { useQueryClient } from "@tanstack/react-query";
-=======
 import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useCategories, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
->>>>>>> a488c89 (name fixes)
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -571,7 +567,41 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                     </div>
                     <div>
                       <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">System Role</p>
-                      <p className="font-semibold text-neutral-900 mt-1">{data.role}</p>
+                      {currentUser?.role === 'Admin' ? (
+                        <select
+                          className="mt-1 block w-full text-xs font-semibold text-neutral-900 border-neutral-200 rounded-md focus:ring-black focus:border-black"
+                          value={data.role}
+                          onChange={async (e) => {
+                            const newRole = e.target.value;
+                            if (newRole === data.role) return;
+                            try {
+                              const res = await fetch(`/api/employees/${data.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ role: newRole })
+                              });
+                              if (res.ok) {
+                                queryClient.invalidateQueries({ queryKey: ["employees"] });
+                                // Update local data to reflect immediately in drawer
+                                setSelectedItem({ ...selectedItem, data: { ...data, role: newRole }});
+                              } else {
+                                const err = await res.json();
+                                alert(`Failed to update role: ${err.error}`);
+                              }
+                            } catch (err) {
+                              console.error(err);
+                              alert('An error occurred while updating the role.');
+                            }
+                          }}
+                        >
+                          <option value="Employee">Employee</option>
+                          <option value="Admin">Admin</option>
+                          <option value="Asset Manager">Asset Manager</option>
+                          <option value="Department Head">Department Head</option>
+                        </select>
+                      ) : (
+                        <p className="font-semibold text-neutral-900 mt-1">{data.role}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Allocated Items</p>

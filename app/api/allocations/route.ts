@@ -35,6 +35,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     console.error('Error allocating asset:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 });
+    if (error instanceof Error) {
+      try {
+        const parsedError = JSON.parse(error.message);
+        if (parsedError.code === 'CONFLICT_ALLOCATED') {
+          return NextResponse.json(parsedError, { status: 409 });
+        }
+      } catch (e) {
+        // Not a JSON error string
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

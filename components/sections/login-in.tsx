@@ -150,7 +150,7 @@ export function LoginSection() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-semibold text-gray-900">Password</label>
-                <Link href="#" className="text-xs text-black hover:underline font-semibold">Forgot password?</Link>
+                <Link href="/forgot-password" className="text-xs text-black hover:underline font-semibold">Forgot password?</Link>
               </div>
               <div className="relative">
                 <input 

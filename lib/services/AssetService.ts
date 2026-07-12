@@ -144,8 +144,21 @@ export class AssetService {
     const result = await prisma.$transaction(async (tx) => {
       const asset = await tx.assets.findUnique({ where: { id: data.assetId } });
       if (!asset) throw new Error("Asset not found");
-      if (asset.status !== 'Available') throw new Error(`Asset is currently ${asset.status}`);
-
+      if (asset.status !== 'Available') {
+        const activeAllocation = await tx.asset_allocations.findFirst({
+          where: { asset_id: data.assetId, status: 'Active' },
+          include: { users_asset_allocations_allocated_toTousers: { select: { first_name: true, last_name: true, id: true } } }
+        });
+        if (activeAllocation) {
+          throw new Error(JSON.stringify({
+            code: 'CONFLICT_ALLOCATED',
+            message: `Asset is currently held by ${activeAllocation.users_asset_allocations_allocated_toTousers.first_name} ${activeAllocation.users_asset_allocations_allocated_toTousers.last_name}`,
+            currentAssigneeId: activeAllocation.users_asset_allocations_allocated_toTousers.id,
+            currentAssigneeName: `${activeAllocation.users_asset_allocations_allocated_toTousers.first_name} ${activeAllocation.users_asset_allocations_allocated_toTousers.last_name}`
+          }));
+        }
+        throw new Error(`Asset is currently ${asset.status}`);
+      }
       const allocation = await tx.asset_allocations.create({
         data: {
           asset_id: data.assetId,

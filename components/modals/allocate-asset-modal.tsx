@@ -48,6 +48,8 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
     },
   });
 
+  const [conflictData, setConflictData] = useState<{ assigneeName: string, assigneeId: string } | null>(null);
+
   const mutation = useMutation({
     mutationFn: async () => {
       const payload: Record<string, any> = {
@@ -66,6 +68,9 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        if (res.status === 409 && errData.code === 'CONFLICT_ALLOCATED') {
+          throw { isConflict: true, data: errData };
+        }
         throw new Error(errData.error || "Failed to allocate asset");
       }
       return res.json();
@@ -78,19 +83,55 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
       setExpectedReturnDate("");
       setNotes("");
       setError(null);
+      setConflictData(null);
       onSuccess?.();
       onClose();
     },
-    onError: (err: Error) => {
-      setError(err.message);
+    onError: (err: any) => {
+      if (err.isConflict) {
+        setConflictData({ assigneeName: err.data.currentAssigneeName, assigneeId: err.data.currentAssigneeId });
+        setError(err.data.message);
+      } else {
+        setError(err.message);
+      }
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setConflictData(null);
     if (!allocatedToId) return setError("Please select an employee to allocate the asset to.");
     mutation.mutate();
+  };
+
+  const handleRequestTransfer = async () => {
+    if (!conflictData) return;
+    try {
+      // Find current user's department for fromDepartmentId. We can just pass a dummy one for now if not available, 
+      // or the API should handle it. The transferAssetSchema requires fromDepartmentId, toDepartmentId, requestedById.
+      // But we can just use the transfer API.
+      const payload = {
+        assetId,
+        fromDepartmentId: "00000000-0000-0000-0000-000000000000", // We should ideally get this from the asset
+        toDepartmentId: currentUser?.department_id || "00000000-0000-0000-0000-000000000000",
+        requestedById: currentUser?.id || "00000000-0000-0000-0000-000000000001",
+        reason: "Requested via conflict resolution during allocation"
+      };
+      
+      const res = await fetch("/api/transfers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) throw new Error("Failed to request transfer");
+      
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError("Failed to request transfer. Please try again.");
+    }
   };
 
   return (
@@ -107,8 +148,17 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-650">
-              {error}
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-650 flex flex-col gap-2">
+              <p>{error}</p>
+              {conflictData && (
+                <button
+                  type="button"
+                  onClick={handleRequestTransfer}
+                  className="w-full mt-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                >
+                  Request Transfer from {conflictData.assigneeName}
+                </button>
+              )}
             </div>
           )}
 

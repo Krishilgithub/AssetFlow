@@ -130,6 +130,39 @@ export class CoreService {
     return newUser;
   }
 
+  static async updateEmployeeRole(employeeId: string, newRoleName: string, currentUserId?: string | null) {
+    // Check if role exists, if not create it
+    let roleRecord = await prisma.roles.findUnique({ where: { name: newRoleName } });
+    if (!roleRecord) {
+      roleRecord = await prisma.roles.create({ data: { name: newRoleName } });
+    }
+
+    // Find existing user_roles for this employee and delete them
+    await prisma.user_roles.deleteMany({
+      where: { user_id: employeeId }
+    });
+
+    // Create the new role for the employee
+    await prisma.user_roles.create({
+      data: {
+        user_id: employeeId,
+        role_id: roleRecord.id
+      }
+    });
+
+    await prisma.audit_logs.create({
+      data: {
+        table_name: 'user_roles',
+        record_id: employeeId,
+        action_type: 'UPDATE',
+        performed_by: currentUserId || undefined,
+        new_value: { new_role: newRoleName }
+      }
+    });
+
+    return { success: true, role: newRoleName };
+  }
+
   /**
    * Departments
    */

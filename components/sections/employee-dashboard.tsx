@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport, useCurrentUser, clearCurrentUser } from "@/lib/hooks/useDashboard";
+import { CalendarView } from "@/components/ui/calendar-view";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -694,6 +695,20 @@ export function EmployeeDashboard() {
       { label: "Cancelled",        value: bookings.filter(b => b.status === "Cancelled").length },
     ];
 
+    const calendarEvents = bookings.map(b => {
+      // Parse "YYYY-MM-DD" and "HH:MM" 
+      const startDateTime = new Date(`${b.date}T${b.startTime}:00`);
+      const endDateTime = new Date(`${b.date}T${b.endTime}:00`);
+      return {
+        id: b.id,
+        title: `${b.resource} - ${b.purpose || 'Booking'}`,
+        start: startDateTime,
+        end: endDateTime,
+        status: b.status
+      };
+    });
+
+
     return (
       <div className="space-y-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -742,13 +757,21 @@ export function EmployeeDashboard() {
             </form>
           </div>
 
-          {/* Bookings Table */}
+          {/* Bookings Table / Calendar */}
           <div className="lg:col-span-2 bg-white border border-neutral-200/80 rounded-lg p-6 space-y-4">
-            <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">My Bookings</h3>
-            <div className="overflow-x-auto text-xs">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">My Bookings</h3>
+            </div>
+            
+            <div className="mb-6">
+              <CalendarView events={calendarEvents} />
+            </div>
+
+            <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider mt-8 mb-2">Booking List</h3>
+            <div className="overflow-x-auto text-xs border border-neutral-200 rounded-lg">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-neutral-100">
+                  <TableRow className="border-neutral-100 bg-neutral-50">
                     {["Resource", "Purpose", "Date", "Time", "Status", "Actions"].map(h => (
                       <TableHead key={h} className="font-bold text-neutral-400 text-[9px] uppercase tracking-wider">{h}</TableHead>
                     ))}
@@ -756,7 +779,7 @@ export function EmployeeDashboard() {
                 </TableHeader>
                 <TableBody>
                   {bookings.map(bkg => (
-                    <TableRow key={bkg.id} onClick={() => { setDrawerItem({ type: "booking", data: bkg as unknown as Record<string, unknown> }); setDrawerTab("Booking Details"); setDrawerOpen(true); }} className="border-t border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
+                    <TableRow key={bkg.id} onClick={() => { setDrawerItem({ type: "booking", data: bkg as unknown as Record<string, unknown> }); setDrawerTab("Booking Details"); setDrawerOpen(true); }} className="border-t border-neutral-100 hover:bg-neutral-50/50 cursor-pointer">
                       <td className="py-3 font-bold text-neutral-900">{bkg.resource}</td>
                       <td className="py-3 text-neutral-500 font-medium">{bkg.purpose}</td>
                       <td className="py-3 text-neutral-500">{bkg.date}</td>
