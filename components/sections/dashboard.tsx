@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -259,10 +260,15 @@ const CustomHeatmap = () => {
   );
 };
 
-export function DashboardSection() {
+interface DashboardSectionProps {
+  initialRole?: "Admin" | "Asset Manager";
+}
+
+export function DashboardSection({ initialRole = "Admin" }: DashboardSectionProps) {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
-  const [currentRole, setCurrentRole] = useState<"Admin" | "Asset Manager">("Admin");
+  const [currentRole] = useState<"Admin" | "Asset Manager">(initialRole);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const [registerStep, setRegisterStep] = useState(1);
 
@@ -3371,35 +3377,48 @@ export function DashboardSection() {
                     className="fixed inset-0 z-30"
                     onClick={() => setIsRoleDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 mt-1.5 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1.5 z-40 text-xs text-neutral-700">
+                  <div className="absolute right-0 mt-1.5 w-52 bg-white border border-neutral-200 rounded-lg shadow-lg py-1.5 z-40 text-xs text-neutral-700">
+                    <div className="px-4 py-1.5 border-b border-neutral-100 mb-1">
+                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Switch Console</span>
+                    </div>
                     <button
                       onClick={() => {
-                        setCurrentRole("Admin");
-                        setActiveTab("Dashboard");
                         setIsRoleDropdownOpen(false);
-                        triggerToast("Switched to System Admin dashboard", "success");
+                        router.push("/dashboard/admin");
                       }}
-                      className={`w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center justify-between font-medium ${
+                      className={`w-full text-left px-4 py-2.5 hover:bg-neutral-50 flex items-center justify-between font-medium ${
                         currentRole === "Admin" ? "text-black bg-neutral-50 font-bold" : ""
                       }`}
                     >
-                      <span>System Admin</span>
-                      {currentRole === "Admin" && <span>✓</span>}
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-neutral-950 text-white rounded flex items-center justify-center text-[8px] font-extrabold">AD</div>
+                        <span>System Admin</span>
+                      </div>
+                      {currentRole === "Admin" && <span className="text-[10px]">✓</span>}
                     </button>
                     <button
                       onClick={() => {
-                        setCurrentRole("Asset Manager");
-                        setActiveTab("Dashboard");
                         setIsRoleDropdownOpen(false);
-                        triggerToast("Switched to Asset Manager dashboard", "success");
+                        router.push("/dashboard/asset-manager");
                       }}
-                      className={`w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-center justify-between font-medium ${
+                      className={`w-full text-left px-4 py-2.5 hover:bg-neutral-50 flex items-center justify-between font-medium ${
                         currentRole === "Asset Manager" ? "text-black bg-neutral-50 font-bold" : ""
                       }`}
                     >
-                      <span>Asset Manager</span>
-                      {currentRole === "Asset Manager" && <span>✓</span>}
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-neutral-700 text-white rounded flex items-center justify-center text-[8px] font-extrabold">PS</div>
+                        <span>Asset Manager</span>
+                      </div>
+                      {currentRole === "Asset Manager" && <span className="text-[10px]">✓</span>}
                     </button>
+                    <div className="px-4 py-2 border-t border-neutral-100 mt-1">
+                      <button
+                        onClick={() => { setIsRoleDropdownOpen(false); router.push("/dashboard"); }}
+                        className="text-[9px] font-semibold text-neutral-400 hover:text-neutral-700 transition-colors"
+                      >
+                        ← Back to role selection
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
