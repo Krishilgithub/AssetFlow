@@ -80,9 +80,9 @@ export class DashboardService {
     return activities.map(activity => ({
       id: activity.id,
       user: activity.users ? `${activity.users.first_name} ${activity.users.last_name}` : 'System',
-      action: activity.action_type,
-      entity: activity.table_name,
-      timestamp: activity.created_at,
+      action: `${activity.action_type} on ${activity.table_name}`,
+      module: activity.table_name,
+      time: activity.created_at ? new Date(activity.created_at).toLocaleString() : new Date().toLocaleString(),
     }));
   }
 

@@ -41,11 +41,42 @@ export function useDepartments() {
   });
 }
 
+export function useEmployees() {
+  return useQuery<any[]>({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/employees');
+      return data;
+    },
+  });
+}
+
+
 export function useAssetsList() {
   return useQuery<any[]>({
     queryKey: ['assetsList'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/assets-list');
+      const { data } = await axios.get('/api/assets');
+      return data;
+    },
+  });
+}
+
+export function useAllocations() {
+  return useQuery<any[]>({
+    queryKey: ['allocations'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/allocations');
+      return data;
+    },
+  });
+}
+
+export function useTransfers() {
+  return useQuery<any[]>({
+    queryKey: ['transfers'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/transfers');
       return data;
     },
   });

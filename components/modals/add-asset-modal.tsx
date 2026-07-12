@@ -52,12 +52,10 @@ export function AddAssetModal({ children, onSuccess }: { children: React.ReactNo
     
     mutation.mutate({
       name,
-      tag_number: tagNumber,
-      // For MVP without categories API, hardcode a UUID if empty, else use selected
-      category_id: categoryId || "11111111-1111-1111-1111-111111111111", 
-      department_id: departmentId,
-      location_id: "22222222-2222-2222-2222-222222222222", // Default location
-      status: "Available"
+      assetTag: tagNumber,
+      categoryId: categoryId || "11111111-1111-1111-1111-111111111111", 
+      departmentId: departmentId,
+      locationId: "22222222-2222-2222-2222-222222222222",
     });
   };
 

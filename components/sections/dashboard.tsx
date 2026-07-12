@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
+import { AddDepartmentModal } from "@/components/modals/add-department-modal";
+import { AddAssetModal } from "@/components/modals/add-asset-modal";
+import { AddEmployeeModal } from "@/components/modals/add-employee-modal";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -260,7 +263,7 @@ const CustomHeatmap = () => {
   );
 };
 
-export function DashboardSection() {
+export function DashboardSection({ initialRole = "Admin" }: { initialRole?: string }) {
   const { data: kpis } = useDashboardKPIs();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -271,17 +274,9 @@ export function DashboardSection() {
   const departments = departmentsData || [];
   const setDepartments: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
-  // Mock State for Employees
-  const [employees, setEmployees] = useState([
-    { id: "EMP-101", name: "Priya Shah", email: "priya.shah@company.com", initials: "PS", dept: "IT Operations", role: "Asset Manager", allocatedAssetsCount: 4, status: "Active" },
-    { id: "EMP-102", name: "Marcus Vance", email: "marcus.vance@company.com", initials: "MV", dept: "Engineering", role: "Department Head", allocatedAssetsCount: 3, status: "Active" },
-    { id: "EMP-103", name: "Emily Rogers", email: "emily.rogers@company.com", initials: "ER", dept: "Finance", role: "Department Head", allocatedAssetsCount: 2, status: "Active" },
-    { id: "EMP-104", name: "Darnell Cole", email: "darnell.cole@company.com", initials: "DC", dept: "Human Resources", role: "Employee", allocatedAssetsCount: 1, status: "Active" },
-    { id: "EMP-105", name: "Alex Dupont", email: "alex.dupont@company.com", initials: "AD", dept: "Operations", role: "Employee", allocatedAssetsCount: 2, status: "Active" },
-    { id: "EMP-106", name: "Sarah Jenkins", email: "sarah.jenkins@company.com", initials: "SJ", dept: "Marketing", role: "Employee", allocatedAssetsCount: 1, status: "Active" },
-    { id: "EMP-107", name: "Aria Thorne", email: "aria.thorne@company.com", initials: "AT", dept: "Engineering", role: "Employee", allocatedAssetsCount: 2, status: "Active" },
-    { id: "EMP-108", name: "John Doe", email: "john.doe@company.com", initials: "JD", dept: "Engineering", role: "Employee", allocatedAssetsCount: 0, status: "Inactive" },
-  ]);
+  const { data: employeesData } = useEmployees();
+  const employees = employeesData || [];
+  const setEmployees: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
 
   // Mock State for Categories
   const [categories, setCategories] = useState([
@@ -405,14 +400,10 @@ export function DashboardSection() {
   const [selectedItem, setSelectedItem] = useState<{ type: string; data: any } | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState("Overview");
+  const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
 
-  // Activity Log timeline representation
-  const [activityLogs] = useState([
-    { user: "Priya Shah", action: "Assigned AST-0010 (MacBook Pro)", module: "Employees", time: "10m ago" },
-    { user: "Marcus Vance", action: "Approved AUD-803 (Engineering)", module: "Audits", time: "1h ago" },
-    { user: "System Scheduler", action: "Flagged AST-0552 warranty expiry", module: "Assets", time: "2h ago" },
-    { user: "Alex Dupont", action: "Transferred AST-0820 control", module: "Assets", time: "Yesterday" },
-  ]);
+  const { data: activitiesData } = useDashboardActivities();
+  const activityLogs = activitiesData || [];
 
   const handleApprovalAction = (id: number, action: "Approve" | "Reject") => {
     setPendingApprovals((prev) =>
@@ -941,7 +932,7 @@ export function DashboardSection() {
               <p className="text-xs text-neutral-400 mt-0.5 font-medium">Real-time logs of organizational actions and updates</p>
             </div>
             <div className="space-y-4 mt-2">
-              {activityLogs.map((activity, idx) => (
+              {activityLogs.map((activity: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-3 border-b border-neutral-50 pb-3 last:border-0 last:pb-0">
                   <div className="text-neutral-400 p-1.5 bg-neutral-50 rounded-lg border border-neutral-100 shrink-0">
                     <HugeiconsIcon icon={PackageIcon} size={16} />
@@ -1027,9 +1018,11 @@ export function DashboardSection() {
           <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Department Management</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Configure corporate branches, cost centers, and checkout privileges</p>
         </div>
-        <button onClick={() => triggerToast("Add Department modal opened", "success")} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
-          Add Department
-        </button>
+        <AddDepartmentModal>
+          <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+            Add Department
+          </button>
+        </AddDepartmentModal>
       </div>
 
       {/* Filters & Search */}
@@ -1120,7 +1113,7 @@ export function DashboardSection() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => triggerToast("CSV Export initiated", "success")} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Export</button>
-          <button onClick={() => triggerToast("Add Employee modal opened", "success")} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">Add Employee</button>
+          <button onClick={() => setIsAddEmployeeModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">Add Employee</button>
         </div>
       </div>
 
@@ -1298,9 +1291,16 @@ export function DashboardSection() {
 
       {/* Registrations list */}
       <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4">
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Recent Registrations Ledger</h3>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Chronological checklist of physical and software logs added to the database</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Recent Registrations Ledger</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Chronological checklist of physical and software logs added to the database</p>
+          </div>
+          <AddAssetModal>
+            <button className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">
+              Add Asset
+            </button>
+          </AddAssetModal>
         </div>
         <div className="mt-2">
           <Table>
@@ -1981,6 +1981,7 @@ export function DashboardSection() {
         {renderDetailDrawer()}
         {renderToast()}
         {renderConfirmModal()}
+        <AddEmployeeModal isOpen={isAddEmployeeModalOpen} onClose={() => setIsAddEmployeeModalOpen(false)} />
       </div>
     </div>
   );
