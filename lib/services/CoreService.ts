@@ -2,18 +2,20 @@ import { prisma } from '../db';
 import { z } from 'zod';
 import * as argon2 from 'argon2';
 
+const uuidRegex = /^[0-9a-fA-F-]{36}$/;
+
 export const createEmployeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
   role: z.string().optional().default("Employee"),
-  departmentId: z.string().uuid().optional(),
+  departmentId: z.string().regex(uuidRegex).optional(),
 });
 
 export const createDepartmentSchema = z.object({
   name: z.string().min(1),
-  managerId: z.string().uuid().optional(),
-  locationId: z.string().uuid().optional(),
+  managerId: z.string().regex(uuidRegex).optional(),
+  locationId: z.string().regex(uuidRegex).optional(),
 });
 
 export class CoreService {

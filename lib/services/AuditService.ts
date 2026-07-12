@@ -1,11 +1,13 @@
 import { prisma } from '../db';
 import { z } from 'zod';
 
+const uuidRegex = /^[0-9a-fA-F-]{36}$/;
+
 export const createAuditSchema = z.object({
   name: z.string().min(1),
   scheduledDate: z.string().optional(),
-  departmentId: z.string().uuid().optional(),
-  auditorId: z.string().uuid(),
+  departmentId: z.string().regex(uuidRegex).optional(),
+  auditorId: z.string().regex(uuidRegex),
 });
 
 export class AuditService {

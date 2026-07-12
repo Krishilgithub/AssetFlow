@@ -1,6 +1,8 @@
 import { prisma } from '../db';
 import { z } from 'zod';
 
+const uuidRegex = /^[0-9a-fA-F-]{36}$/;
+
 export const createAssetSchema = z.object({
   name: z.string().min(1),
   model: z.string().optional(),
@@ -10,24 +12,24 @@ export const createAssetSchema = z.object({
   purchaseDate: z.string().optional(),
   supplier: z.string().optional(),
   notes: z.string().optional(),
-  categoryId: z.string().uuid(),
-  departmentId: z.string().uuid(),
-  locationId: z.string().uuid().optional(),
+  categoryId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  departmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  locationId: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
 });
 
 export const allocateAssetSchema = z.object({
-  assetId: z.string().uuid(),
-  allocatedToId: z.string().uuid(),
-  allocatedById: z.string().uuid(),
+  assetId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  allocatedToId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  allocatedById: z.string().regex(uuidRegex, "Invalid UUID format"),
   expectedReturnDate: z.string().optional(),
   notes: z.string().optional(),
 });
 
 export const transferAssetSchema = z.object({
-  assetId: z.string().uuid(),
-  fromDepartmentId: z.string().uuid(),
-  toDepartmentId: z.string().uuid(),
-  requestedById: z.string().uuid(),
+  assetId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  fromDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  toDepartmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
+  requestedById: z.string().regex(uuidRegex, "Invalid UUID format"),
   reason: z.string().optional(),
 });
 
