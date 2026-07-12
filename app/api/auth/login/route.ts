@@ -23,6 +23,15 @@ export async function POST(req: Request) {
       path: '/'
     });
 
+    // Set HTTP Only Cookie for Access Token
+    cookieStore.set('assetflow_session', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/'
+    });
+
     return NextResponse.json({
       accessToken: result.accessToken,
       user: {

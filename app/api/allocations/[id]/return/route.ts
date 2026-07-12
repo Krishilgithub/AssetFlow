@@ -9,7 +9,11 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const body = await request.json().catch(() => ({}));
     
     const user = await getAuthUser();
-    await AssetService.returnAsset(id, user?.id || '00000000-0000-0000-0000-000000000001', body.condition);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await AssetService.returnAsset(id, user.id, body.condition);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

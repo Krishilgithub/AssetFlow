@@ -25,6 +25,26 @@ export async function getAuthUser() {
     console.error('Error verifying bearer token in getAuthUser:', error);
   }
 
+  // 1.5 Try to authenticate via assetflow_session cookie (JWT)
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('assetflow_session')?.value;
+    if (sessionToken) {
+      const payload = TokenService.verifyAccessToken(sessionToken);
+      if (payload) {
+        const dbUser = await prisma.users.findUnique({
+          where: { id: payload.userId },
+          include: { user_roles: { include: { roles: true } } }
+        });
+        if (dbUser) {
+          return dbUser;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error verifying assetflow_session in getAuthUser:', error);
+  }
+
   // 2. Fallback: Read refresh token from cookies
   const cookieStore = await cookies();
   const token = cookieStore.get('refresh_token')?.value;
