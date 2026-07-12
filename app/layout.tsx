@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AssetFlow - Enterprise Asset & Resource Management",
-  description: "Corporate command center for organization setup, asset registry, employee tracking, audits, and configuration settings.",
+  title: "AssetFlow — Enterprise Asset & Resource Management",
+  description: "The smarter way to manage enterprise assets, track resources, and empower your workforce — all from one command center.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
