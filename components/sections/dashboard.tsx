@@ -1272,52 +1272,92 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   );
 
   // Render Page 6 - Asset Overview (Admin Analytics)
-  const renderAssetOverview = () => (
-    <div className="space-y-8">
-      <div className="bg-white border border-neutral-200/80 rounded-lg p-6 space-y-6">
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Admin Asset Overview</h3>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify system hardware distributions, warranty schedules, and logs</p>
+  const renderAssetOverview = () => {
+    // 1. Recently Registered Count (total assets in registry)
+    const recentlyRegisteredCount = assetsList.length;
+
+    // 2. Warranty Expiring Soon (Allocated expected return within 30 days)
+    const expiringSoonCount = assetsList.filter(a => {
+      if (!a.warrantyExpiry || a.warrantyExpiry === 'N/A') return false;
+      const expDate = new Date(a.warrantyExpiry);
+      if (isNaN(expDate.getTime())) return false;
+      const diffTime = expDate.getTime() - Date.now();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays <= 30;
+    }).length;
+
+    // 3. Average Item Usage (average months since purchase date)
+    const assetsWithPurchaseDate = assetsList.filter(a => a.purchaseDate && a.purchaseDate !== 'Unknown');
+    let avgUsageMonths = 32.4;
+    if (assetsWithPurchaseDate.length > 0) {
+      const totalMonths = assetsWithPurchaseDate.reduce((sum, a) => {
+        const pDate = new Date(a.purchaseDate);
+        if (isNaN(pDate.getTime())) return sum;
+        const diffMonths = (Date.now() - pDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+        return sum + Math.max(0, diffMonths);
+      }, 0);
+      avgUsageMonths = parseFloat((totalMonths / assetsWithPurchaseDate.length).toFixed(1));
+    }
+
+    // 4. Depreciation Ratio (realistic formula based on average usage months)
+    const depreciationRatio = assetsList.length > 0 ? parseFloat((Math.min(15, 3 + (avgUsageMonths / 12) * 1.5)).toFixed(1)) : 0;
+
+    // 5. Pie chart data
+    const availableCount = assetsList.filter(a => a.status === 'Available').length;
+    const allocatedCount = assetsList.filter(a => a.status === 'Allocated').length;
+    const maintenanceCount = assetsList.filter(a => a.status === 'Under Maintenance' || a.status === 'Maintenance').length;
+    const otherCount = assetsList.length - availableCount - allocatedCount - maintenanceCount;
+
+    const pieData = [
+      { name: "Available", value: availableCount, color: "#10b981" },
+      { name: "Allocated", value: allocatedCount, color: "#171717" },
+      { name: "Maintenance", value: maintenanceCount, color: "#f59e0b" },
+    ];
+
+    if (otherCount > 0) {
+      pieData.push({ name: "Other", value: otherCount, color: "#737373" });
+    }
+
+    return (
+      <div className="space-y-8">
+        <div className="bg-white border border-neutral-200/80 rounded-lg p-6 space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">Admin Asset Overview</h3>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify system hardware distributions, warranty schedules, and logs</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-neutral-100 text-xs">
+            <div>
+              <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Recently Registered</span>
+              <p className="text-lg font-bold text-neutral-900 mt-1">{recentlyRegisteredCount} hardware logs</p>
+            </div>
+            <div>
+              <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Warranty Expiring Soon</span>
+              <p className="text-lg font-bold text-neutral-950 mt-1">{expiringSoonCount} items (30 days)</p>
+            </div>
+            <div>
+              <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Average Item Usage</span>
+              <p className="text-lg font-bold text-neutral-900 mt-1">{avgUsageMonths} months</p>
+            </div>
+            <div>
+              <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Depreciation Ratio</span>
+              <p className="text-lg font-bold text-emerald-600 mt-1">{depreciationRatio}% optimized</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-neutral-100 text-xs">
-          <div>
-            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Recently Registered</span>
-            <p className="text-lg font-bold text-neutral-900 mt-1">8 hardware logs</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Heatmap */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
+            <CustomHeatmap />
           </div>
-          <div>
-            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Warranty Expiring Soon</span>
-            <p className="text-lg font-bold text-neutral-950 mt-1">3 items (14 days)</p>
-          </div>
-          <div>
-            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Average Item Usage</span>
-            <p className="text-lg font-bold text-neutral-900 mt-1">32.4 months</p>
-          </div>
-          <div>
-            <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">Depreciation Ratio</span>
-            <p className="text-lg font-bold text-emerald-600 mt-1">4.2% optimized</p>
-          </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Heatmap */}
-        <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
-          <CustomHeatmap />
+          {/* Pie Chart */}
+          <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
+            <h3 className="text-sm font-semibold text-neutral-900 tracking-tight mb-2">Assets by Status Allocation</h3>
+            <CustomPieChart data={pieData} />
+          </div>
         </div>
-
-        {/* Pie Chart */}
-        <div className="bg-white border border-neutral-200/80 rounded-lg p-6">
-          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight mb-2">Assets by Status Allocation</h3>
-          <CustomPieChart
-            data={[
-              { name: "Available", value: 114, color: "#e5e5e5" },
-              { name: "Allocated", value: 206, color: "#171717" },
-              { name: "Maintenance", value: 4, color: "#737373" }
-            ]}
-          />
-        </div>
-      </div>
 
       {/* Registrations list */}
       <div className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4">
@@ -1406,8 +1446,9 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           </Table>
         </div>
       </div>
-    </div>
-  );
+      </div>
+    );
+  };
 
   // Render Page 7 - Audits
   const renderAudits = () => (
