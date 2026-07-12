@@ -98,8 +98,8 @@ export class AssetService {
       data: {
         table_name: 'assets',
         record_id: asset.id,
-        action_type: 'CREATE',
-        performed_by: currentUserId,
+        action_type: 'INSERT',
+        performed_by: currentUserId || undefined,
       }
     });
 
@@ -160,7 +160,7 @@ export class AssetService {
         data: {
           table_name: 'asset_allocations',
           record_id: allocation.id,
-          action_type: 'CREATE',
+          action_type: 'INSERT',
           performed_by: currentUserId,
           new_value: { allocated_to: data.allocatedToId },
         }
@@ -245,7 +245,7 @@ export class AssetService {
       data: {
         table_name: 'asset_transfers',
         record_id: transfer.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });

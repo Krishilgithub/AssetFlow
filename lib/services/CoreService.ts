@@ -106,7 +106,7 @@ export class CoreService {
       data: {
         table_name: 'users',
         record_id: newUser.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });
@@ -162,7 +162,7 @@ export class CoreService {
       data: {
         table_name: 'departments',
         record_id: dept.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });

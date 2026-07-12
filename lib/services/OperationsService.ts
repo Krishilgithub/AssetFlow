@@ -71,7 +71,7 @@ export class OperationsService {
       data: {
         table_name: 'asset_maintenances',
         record_id: record.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });
@@ -151,7 +151,7 @@ export class OperationsService {
       data: {
         table_name: 'resource_bookings',
         record_id: booking.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });

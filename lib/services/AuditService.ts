@@ -45,7 +45,7 @@ export class AuditService {
       data: {
         table_name: 'asset_audits',
         record_id: audit.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: currentUserId,
       }
     });

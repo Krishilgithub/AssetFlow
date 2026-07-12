@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       data: {
         table_name: 'asset_categories',
         record_id: category.id,
-        action_type: 'CREATE',
+        action_type: 'INSERT',
         performed_by: user?.id || null,
       }
     });
