@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
+import { useDeptOverview, useApproveMutation, useRejectMutation } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -146,27 +148,40 @@ export function DeptHeadDashboard() {
   };
 
   // ─── Department Overview State ─────────────────────────────────────────────
-  const [deptAssets, setDeptAssets] = useState<any[]>([]);
+  const deptQuery = useDeptOverview();
+    const deptData = deptQuery.data;
+    const deptInfo = deptData?.dept;
+    const deptOverview = deptData?.overview || {};
+    const deptAssets = deptData?.assets || [];
+    const setDeptAssets = () => deptQuery.refetch();
 
   // ─── Department Employees State ─────────────────────────────────────────────
   const [deptEmployees, setDeptEmployees] = useState<any[]>([]);
   const employees: any[] = [];
 
   // ─── Bookings State ─────────────────────────────────────────────
-  const [bookings, setBookings] = useState<any[]>([]);
+  const bookings = deptData?.bookings || [];
+  const setBookings = () => deptQuery.refetch();
   const [bookingForm, setBookingForm] = useState({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
 
   // ─── Transfer Requests ──────────────────────────────────────────────────
-  const [transferReqs, setTransferReqs] = useState<any[]>([]);
+  const transferReqs = deptData?.transfers || [];
+    const setTransferReqs = () => deptQuery.refetch();
+    const approveTransferMut = useApproveMutation("transfers");
+    const rejectTransferMut = useRejectMutation("transfers");
 
   // ─── Maintenance ────────────────────────────────────────────────────────
-  const [maintenanceReqs, setMaintenanceReqs] = useState<any[]>([]);
+  const maintenanceReqs = deptData?.maintenance || [];
+    const setMaintenanceReqs = () => deptQuery.refetch();
+    const approveMaintenanceMut = useApproveMutation("maintenance");
+    const rejectMaintenanceMut = useRejectMutation("maintenance");
+    const approveReturnMut = useApproveMutation("returns");
 
   // ─── Notifications ──────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState<any[]>([]);
 
   // ─── Reports ────────────────────────────────────────────────────────────
-  const reports: any[] = [];
+  const reports: any[] = deptData?.reports || [];
 
   // Confirm modal
   const [confirmModal, setConfirmModal] = useState<{
@@ -248,7 +263,7 @@ export function DeptHeadDashboard() {
         </div>
 
         <div className="px-6 border-b border-neutral-100 flex gap-4 text-xs font-semibold text-neutral-500 overflow-x-auto">
-          {tabs.map(t => (
+          {tabs.map((t: any) => (
             <button key={t} onClick={() => setDrawerTab(t)} className={`py-3 border-b-2 whitespace-nowrap ${drawerTab === t ? "border-black text-black" : "border-transparent hover:text-neutral-700"}`}>{t}</button>
           ))}
         </div>
@@ -281,7 +296,7 @@ export function DeptHeadDashboard() {
           )}
           {type === "asset" && drawerTab === "Maintenance History" && (
             <div className="space-y-2">
-              {maintenanceReqs.filter(m => m.assetId === d.id).map((m, i) => (
+              {maintenanceReqs.filter((m: any) => m.assetId === d.id).map((m: any, i: number) => (
                 <div key={i} className="p-3 border border-neutral-100 rounded-lg flex items-center justify-between bg-neutral-50/50">
                   <div>
                     <p className="font-bold text-neutral-900">{m.issue}</p>
@@ -290,7 +305,7 @@ export function DeptHeadDashboard() {
                   <StatusBadge status={m.status} />
                 </div>
               ))}
-              {maintenanceReqs.filter(m => m.assetId === d.id).length === 0 && (
+              {maintenanceReqs.filter((m: any) => m.assetId === d.id).length === 0 && (
                 <p className="text-neutral-400 italic text-center py-6">No maintenance history</p>
               )}
             </div>
@@ -338,7 +353,7 @@ export function DeptHeadDashboard() {
           )}
           {type === "employee" && drawerTab === "Assigned Assets" && (
             <div className="space-y-2">
-              {deptAssets.filter(a => a.allocatedTo === d.name).map((a, i) => (
+              {deptAssets.filter((a: any) => a.allocatedTo === d.name).map((a: any, i: number) => (
                 <div key={i} className="p-3 border border-neutral-100 rounded-lg flex justify-between items-center bg-neutral-50/50">
                   <div>
                     <p className="font-bold text-neutral-900">{a.name}</p>
@@ -347,7 +362,7 @@ export function DeptHeadDashboard() {
                   <StatusBadge status={a.condition} />
                 </div>
               ))}
-              {deptAssets.filter(a => a.allocatedTo === d.name).length === 0 && (
+              {deptAssets.filter((a: any) => a.allocatedTo === d.name).length === 0 && (
                 <p className="text-neutral-400 italic text-center py-6">No assets assigned</p>
               )}
             </div>
@@ -457,19 +472,19 @@ export function DeptHeadDashboard() {
     const kpis = [
       { label: "Department Assets",        value: deptAssets.length,                                                      icon: PackageIcon },
       { label: "Employees",                value: employees.length,                                                        icon: UserMultipleIcon },
-      { label: "Assets in Use",            value: deptAssets.filter(a => a.status === "Allocated").length,                 icon: PackageIcon },
-      { label: "Under Maintenance",        value: maintenanceReqs.filter(m => m.status !== "Resolved").length,             icon: ToolsIcon },
-      { label: "Active Bookings",          value: bookings.filter(b => b.status === "Upcoming" || b.status === "Ongoing").length, icon: Calendar01Icon },
-      { label: "Pending Transfer Approvals", value: transferReqs.filter(t => t.status === "Pending").length,               icon: ArrowLeftRightIcon },
-      { label: "Pending Maintenance",      value: maintenanceReqs.filter(m => m.status === "Pending").length,              icon: AlertCircleIcon },
-      { label: "Dept Utilisation",         value: `${Math.round((deptAssets.filter(a => a.status === "Allocated").length / deptAssets.length) * 100)}%`, icon: Audit01Icon },
+      { label: "Assets in Use",            value: deptAssets.filter((a: any) => a.status === "Allocated").length,                 icon: PackageIcon },
+      { label: "Under Maintenance",        value: maintenanceReqs.filter((m: any) => m.status !== "Resolved").length,             icon: ToolsIcon },
+      { label: "Active Bookings",          value: bookings.filter((b: any) => b.status === "Upcoming" || b.status === "Ongoing").length, icon: Calendar01Icon },
+      { label: "Pending Transfer Approvals", value: deptOverview.pendingTransfers ?? transferReqs.filter((t: any) => t.status === "Pending").length, icon: ArrowLeftRightIcon },
+      { label: "Pending Maintenance", value: deptOverview.pendingMaint ?? maintenanceReqs.filter((m: any) => m.status === "Pending Approval").length, icon: AlertCircleIcon },
+      { label: "Dept Utilisation",         value: `${Math.round((deptAssets.filter((a: any) => a.status === "Allocated").length / deptAssets.length) * 100)}%`, icon: Audit01Icon },
     ];
 
     const catData = [
-      { label: "IT Hardware",    value: deptAssets.filter(a => a.category === "IT Hardware").length,    max: 10 },
-      { label: "Mobile Devices", value: deptAssets.filter(a => a.category === "Mobile Devices").length, max: 10 },
-      { label: "Accessories",    value: deptAssets.filter(a => a.category === "Accessories").length,    max: 10 },
-      { label: "Peripherals",    value: deptAssets.filter(a => a.category === "Peripherals").length,    max: 10 },
+      { label: "IT Hardware",    value: deptAssets.filter((a: any) => a.category === "IT Hardware").length,    max: 10 },
+      { label: "Mobile Devices", value: deptAssets.filter((a: any) => a.category === "Mobile Devices").length, max: 10 },
+      { label: "Accessories",    value: deptAssets.filter((a: any) => a.category === "Accessories").length,    max: 10 },
+      { label: "Peripherals",    value: deptAssets.filter((a: any) => a.category === "Peripherals").length,    max: 10 },
     ];
 
     const recentActivity = [
@@ -481,8 +496,8 @@ export function DeptHeadDashboard() {
     ];
 
     const pendingApprovals = [
-      ...transferReqs.filter(t => t.status === "Pending").map(t => ({ type: "Transfer", desc: `${t.requestedBy} → ${t.assetName}`, id: t.id })),
-      ...maintenanceReqs.filter(m => m.status === "Pending").map(m => ({ type: "Maintenance", desc: `${m.employee} — ${m.assetName}`, id: m.id })),
+      ...transferReqs.filter((t: any) => t.status === "Pending").map((t: any) => ({ type: "Transfer", desc: `${t.requestedBy} → ${t.assetName}`, id: t.id })),
+      ...maintenanceReqs.filter((m: any) => m.status === "Pending").map((m: any) => ({ type: "Maintenance", desc: `${m.employee} — ${m.assetName}`, id: m.id })),
     ];
 
     return (
@@ -525,10 +540,10 @@ export function DeptHeadDashboard() {
             <h3 className="text-[10px] font-bold text-neutral-950 uppercase tracking-wider">Asset Status Overview</h3>
             <div className="flex flex-col gap-3 mt-2">
               {[
-                { label: "Allocated", value: deptAssets.filter(a => a.status === "Allocated").length, color: "bg-neutral-950" },
-                { label: "Available", value: deptAssets.filter(a => a.status === "Available").length, color: "bg-emerald-500" },
-                { label: "In Service", value: deptAssets.filter(a => a.status === "In Service").length, color: "bg-blue-500" },
-                { label: "Under Maintenance", value: maintenanceReqs.filter(m => m.status !== "Resolved").length, color: "bg-amber-500" },
+                { label: "Allocated", value: deptAssets.filter((a: any) => a.status === "Allocated").length, color: "bg-neutral-950" },
+                { label: "Available", value: deptAssets.filter((a: any) => a.status === "Available").length, color: "bg-emerald-500" },
+                { label: "In Service", value: deptAssets.filter((a: any) => a.status === "In Service").length, color: "bg-blue-500" },
+                { label: "Under Maintenance", value: maintenanceReqs.filter((m: any) => m.status !== "Resolved").length, color: "bg-amber-500" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3 text-xs">
                   <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.color}`} />
@@ -553,8 +568,8 @@ export function DeptHeadDashboard() {
                     <p className="text-[10px] font-semibold text-neutral-900 mt-0.5 truncate max-w-[170px]">{p.desc}</p>
                   </div>
                   <div className="flex gap-1.5">
-                    <button onClick={() => { if (p.type === "Transfer") setTransferReqs(prev => prev.map(t => t.id === p.id ? { ...t, status: "Approved" } : t)); else setMaintenanceReqs(prev => prev.map(m => m.id === p.id ? { ...m, status: "In Progress" } : m)); triggerToast(`${p.type} approved`, "success"); }} className="px-2 py-0.5 text-[9px] font-bold bg-black text-white rounded">✓</button>
-                    <button onClick={() => { if (p.type === "Transfer") setTransferReqs(prev => prev.map(t => t.id === p.id ? { ...t, status: "Rejected" } : t)); triggerToast(`${p.type} rejected`, "error"); }} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 text-neutral-600 rounded hover:bg-neutral-50">✕</button>
+                    <button onClick={() => { if (p.type === "Transfer") { approveTransferMut.mutate(p.id, { onSuccess: () => { triggerToast("Transfer approved", "success"); }, onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } else { approveMaintenanceMut.mutate(p.id, { onSuccess: () => { triggerToast("Maintenance approved", "success"); }, onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } }} className="px-2 py-0.5 text-[9px] font-bold bg-black text-white rounded">✓</button>
+                    <button onClick={() => { if (p.type === "Transfer") { rejectTransferMut.mutate({ id: p.id }, { onSuccess: () => { triggerToast("Transfer rejected", "error"); }, onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } }} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 text-neutral-600 rounded hover:bg-neutral-50">✕</button>
                   </div>
                 </div>
               ))}
@@ -568,7 +583,7 @@ export function DeptHeadDashboard() {
           <div className="flex items-center justify-between">
             <h3 className="text-[10px] font-bold text-neutral-950 uppercase tracking-wider">Recent Department Activity</h3>
             <div className="flex gap-2">
-              {[{ label: "View Assets", tab: "Department Assets" }, { label: "Approve Requests", tab: "Transfer Requests" }, { label: "Book Resource", tab: "Bookings" }, { label: "Reports", tab: "Reports" }].map((a, i) => (
+              {[{ label: "View Assets", tab: "Department Assets" }, { label: "Approve Requests", tab: "Transfer Requests" }, { label: "Book Resource", tab: "Bookings" }, { label: "Reports", tab: "Reports" }].map((a: any, i: number) => (
                 <button key={i} onClick={() => setActiveTab(a.tab)} className="px-3 py-1.5 text-[10px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-700">{a.label}</button>
               ))}
             </div>
@@ -605,7 +620,7 @@ export function DeptHeadDashboard() {
   // ───────────────────────────────────────────────────────────────
   const renderDeptAssets = () => {
     const [catF, statF] = ["All", "All"];
-    const filtered = deptAssets.filter(a => {
+    const filtered = deptAssets.filter((a: any) => {
       const matchSearch = a.name.toLowerCase().includes(searchQuery.toLowerCase()) || a.id.toLowerCase().includes(searchQuery.toLowerCase()) || a.allocatedTo.toLowerCase().includes(searchQuery.toLowerCase());
       return matchSearch;
     });
@@ -645,7 +660,7 @@ export function DeptHeadDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(asset => (
+              {filtered.map((asset: any) => (
                 <TableRow key={asset.id} onClick={() => { setDrawerItem({ type: "asset", data: asset as unknown as Record<string, unknown> }); setDrawerTab("Overview"); setDrawerOpen(true); }} className="border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                   <TableCell className="py-4 text-[10px] font-bold text-neutral-450">#{asset.id}</TableCell>
                   <TableCell className="py-4 text-xs font-semibold text-neutral-900">{asset.name}</TableCell>
@@ -678,8 +693,8 @@ export function DeptHeadDashboard() {
     const cards = [
       { label: "Total Employees",       value: employees.length },
       { label: "Assets Assigned",       value: employees.reduce((acc, e) => acc + e.assets, 0) },
-      { label: "No Assets Assigned",    value: employees.filter(e => e.assets === 0).length },
-      { label: "Pending Requests",      value: transferReqs.filter(t => t.status === "Pending").length + maintenanceReqs.filter(m => m.status === "Pending").length },
+      { label: "No Assets Assigned",    value: employees.filter((e: any) => e.assets === 0).length },
+      { label: "Pending Requests",      value: transferReqs.filter((t: any) => t.status === "Pending").length + maintenanceReqs.filter((m: any) => m.status === "Pending").length },
     ];
 
     return (
@@ -711,7 +726,7 @@ export function DeptHeadDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase())).map(emp => (
+                {employees.filter((e: any) => e.name.toLowerCase().includes(searchQuery.toLowerCase())).map((emp: any) => (
                   <TableRow key={emp.id} onClick={() => { setDrawerItem({ type: "employee", data: emp as unknown as Record<string, unknown> }); setDrawerTab("Profile"); setDrawerOpen(true); }} className="border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                     <TableCell className="py-3">
                       <div className="flex items-center gap-2.5">
@@ -749,19 +764,19 @@ export function DeptHeadDashboard() {
     const handleBook = (e: React.FormEvent) => {
       e.preventDefault();
       if (!bookingForm.resource || !bookingForm.date) { triggerToast("Please fill all required fields", "error"); return; }
-      const overlap = bookings.some(b => b.resource === bookingForm.resource && b.date === bookingForm.date && b.status !== "Cancelled" && b.status !== "Completed" && !(bookingForm.endTime <= b.start || bookingForm.startTime >= b.end));
+      const overlap = bookings.some((b: any) => b.resource === bookingForm.resource && b.date === bookingForm.date && b.status !== "Cancelled" && b.status !== "Completed" && !(bookingForm.endTime <= b.start || bookingForm.startTime >= b.end));
       if (overlap) { triggerToast(`Time conflict: ${bookingForm.resource} is already booked then`, "error"); return; }
       const nb = { id: `BKG-${100 + bookings.length}`, resource: bookingForm.resource, bookedBy: DEPT_HEAD.name, purpose: bookingForm.purpose, date: bookingForm.date, start: bookingForm.startTime, end: bookingForm.endTime, status: "Upcoming" };
-      setBookings(p => [nb, ...p]);
+      deptQuery.refetch();
       setBookingForm({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
       triggerToast(`Booking confirmed for ${nb.resource}`, "success");
     };
 
     const cards = [
-      { label: "Upcoming",  value: bookings.filter(b => b.status === "Upcoming").length },
-      { label: "Ongoing",   value: bookings.filter(b => b.status === "Ongoing").length },
-      { label: "Completed", value: bookings.filter(b => b.status === "Completed").length },
-      { label: "Cancelled", value: bookings.filter(b => b.status === "Cancelled").length },
+      { label: "Upcoming",  value: bookings.filter((b: any) => b.status === "Upcoming").length },
+      { label: "Ongoing",   value: bookings.filter((b: any) => b.status === "Ongoing").length },
+      { label: "Completed", value: bookings.filter((b: any) => b.status === "Completed").length },
+      { label: "Cancelled", value: bookings.filter((b: any) => b.status === "Cancelled").length },
     ];
 
     return (
@@ -820,7 +835,7 @@ export function DeptHeadDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookings.map(bkg => (
+                  {bookings.map((bkg: any) => (
                     <TableRow key={bkg.id} onClick={() => { setDrawerItem({ type: "booking", data: bkg as unknown as Record<string, unknown> }); setDrawerTab("Booking Details"); setDrawerOpen(true); }} className="border-t border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                       <td className="py-3 font-bold text-neutral-900">{bkg.resource}</td>
                       <td className="py-3 text-neutral-500">{bkg.bookedBy}</td>
@@ -830,7 +845,7 @@ export function DeptHeadDashboard() {
                       <td className="py-3"><StatusBadge status={bkg.status} /></td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {bkg.status === "Upcoming" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: () => { setBookings(p => p.map(b => b.id === bkg.id ? { ...b, status: "Cancelled" } : b)); triggerToast("Booking cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: () => { triggerToast("Booking cancelled", "success"); deptQuery.refetch(); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -849,10 +864,10 @@ export function DeptHeadDashboard() {
   // ───────────────────────────────────────────────────────────────
   const renderTransfers = () => {
     const cards = [
-      { label: "Pending",   value: transferReqs.filter(t => t.status === "Pending").length,   color: "text-amber-600" },
-      { label: "Approved",  value: transferReqs.filter(t => t.status === "Approved").length,  color: "text-emerald-600" },
-      { label: "Rejected",  value: transferReqs.filter(t => t.status === "Rejected").length,  color: "text-red-600" },
-      { label: "Completed", value: transferReqs.filter(t => t.status === "Completed").length, color: "text-neutral-600" },
+      { label: "Pending",   value: transferReqs.filter((t: any) => t.status === "Pending").length,   color: "text-amber-600" },
+      { label: "Approved",  value: transferReqs.filter((t: any) => t.status === "Approved").length,  color: "text-emerald-600" },
+      { label: "Rejected",  value: transferReqs.filter((t: any) => t.status === "Rejected").length,  color: "text-red-600" },
+      { label: "Completed", value: transferReqs.filter((t: any) => t.status === "Completed").length, color: "text-neutral-600" },
     ];
 
     return (
@@ -878,7 +893,7 @@ export function DeptHeadDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transferReqs.map(req => (
+                {transferReqs.map((req: any) => (
                   <TableRow key={req.id} onClick={() => { setDrawerItem({ type: "transfer", data: req as unknown as Record<string, unknown> }); setDrawerTab("Request Details"); setDrawerOpen(true); }} className="border-t border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                     <td className="py-3 font-bold text-neutral-900 max-w-[140px] truncate">{req.assetName}</td>
                     <td className="py-3">
@@ -894,8 +909,8 @@ export function DeptHeadDashboard() {
                     <td className="py-3" onClick={e => e.stopPropagation()}>
                       {req.status === "Pending" && (
                         <div className="flex gap-1.5">
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Approve Transfer?", description: `Approve transfer of ${req.assetName} from ${req.requestedBy} to ${req.transferTo}?`, onConfirm: () => { setTransferReqs(p => p.map(t => t.id === req.id ? { ...t, status: "Approved" } : t)); triggerToast("Transfer approved", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold bg-neutral-950 text-white rounded">Approve</button>
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Reject Transfer?", description: `Reject the transfer request from ${req.requestedBy}?`, onConfirm: () => { setTransferReqs(p => p.map(t => t.id === req.id ? { ...t, status: "Rejected" } : t)); triggerToast("Transfer rejected", "error"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Reject</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Approve Transfer?", description: `Approve transfer of ${req.assetName} from ${req.requestedBy} to ${req.transferTo}?`, onConfirm: () => { approveTransferMut.mutate(req.id, { onSuccess: () => triggerToast("Transfer approved", "success"), onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } })} className="px-2 py-0.5 text-[9px] font-bold bg-neutral-950 text-white rounded">Approve</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Reject Transfer?", description: `Reject the transfer request from ${req.requestedBy}?`, onConfirm: () => { rejectTransferMut.mutate({ id: req.id }, { onSuccess: () => triggerToast("Transfer rejected", "error"), onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Reject</button>
                         </div>
                       )}
                       {req.status !== "Pending" && (
@@ -917,10 +932,10 @@ export function DeptHeadDashboard() {
   // ───────────────────────────────────────────────────────────────
   const renderMaintenance = () => {
     const cards = [
-      { label: "Pending",     value: maintenanceReqs.filter(m => m.status === "Pending").length,     color: "text-amber-600" },
-      { label: "In Progress", value: maintenanceReqs.filter(m => m.status === "In Progress").length, color: "text-blue-600" },
-      { label: "Resolved",    value: maintenanceReqs.filter(m => m.status === "Resolved").length,    color: "text-emerald-600" },
-      { label: "Critical",    value: maintenanceReqs.filter(m => m.priority === "Critical").length,  color: "text-red-600" },
+      { label: "Pending",     value: maintenanceReqs.filter((m: any) => m.status === "Pending").length,     color: "text-amber-600" },
+      { label: "In Progress", value: maintenanceReqs.filter((m: any) => m.status === "In Progress").length, color: "text-blue-600" },
+      { label: "Resolved",    value: maintenanceReqs.filter((m: any) => m.status === "Resolved").length,    color: "text-emerald-600" },
+      { label: "Critical",    value: maintenanceReqs.filter((m: any) => m.priority === "Critical").length,  color: "text-red-600" },
     ];
 
     return (
@@ -946,7 +961,7 @@ export function DeptHeadDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {maintenanceReqs.map(req => (
+                {maintenanceReqs.map((req: any) => (
                   <TableRow key={req.id} onClick={() => { setDrawerItem({ type: "maintenance", data: req as unknown as Record<string, unknown> }); setDrawerTab("Issue Details"); setDrawerOpen(true); }} className="border-t border-neutral-50 hover:bg-neutral-50/50 cursor-pointer">
                     <td className="py-3 font-bold text-neutral-900 max-w-[130px] truncate">{req.assetName}</td>
                     <td className="py-3">
@@ -962,7 +977,7 @@ export function DeptHeadDashboard() {
                     <td className="py-3 text-neutral-400">{req.createdOn}</td>
                     <td className="py-3" onClick={e => e.stopPropagation()}>
                       {req.status === "Pending" && (
-                        <button onClick={() => setConfirmModal({ isOpen: true, title: "Approve Maintenance?", description: `Approve maintenance request for ${req.assetName}?`, onConfirm: () => { setMaintenanceReqs(p => p.map(m => m.id === req.id ? { ...m, status: "In Progress" } : m)); triggerToast("Maintenance approved", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold bg-neutral-950 text-white rounded">Approve</button>
+                        <button onClick={() => setConfirmModal({ isOpen: true, title: "Approve Maintenance?", description: `Approve maintenance request for ${req.assetName}?`, onConfirm: () => { approveMaintenanceMut.mutate(req.id, { onSuccess: () => triggerToast("Maintenance approved", "success"), onError: (e: any) => triggerToast(e.response?.data?.error || e.message, "error") }); } })} className="px-2 py-0.5 text-[9px] font-bold bg-neutral-950 text-white rounded">Approve</button>
                       )}
                       {req.status !== "Pending" && (
                         <button onClick={() => { setDrawerItem({ type: "maintenance", data: req as unknown as Record<string, unknown> }); setDrawerTab("Issue Details"); setDrawerOpen(true); }} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded">View</button>
@@ -1074,7 +1089,7 @@ export function DeptHeadDashboard() {
         </div>
 
         <div className="flex gap-1 flex-wrap border-b border-neutral-100">
-          {tabs.map(t => (
+          {tabs.map((t: any) => (
             <button key={t} onClick={() => setNotifTab(t)} className={`px-3 py-2 text-[10px] font-bold rounded-t-lg transition-colors ${notifTab === t ? "bg-neutral-950 text-white" : "text-neutral-500 hover:text-neutral-700"}`}>{t}</button>
           ))}
         </div>
@@ -1110,7 +1125,7 @@ export function DeptHeadDashboard() {
     const stats = [
       { label: "Employees Managed",  value: DEPT_HEAD.employees },
       { label: "Department Assets",  value: deptAssets.length },
-      { label: "Approvals Completed", value: transferReqs.filter(t => t.status !== "Pending").length + maintenanceReqs.filter(m => m.status !== "Pending").length },
+      { label: "Approvals Completed", value: transferReqs.filter((t: any) => t.status !== "Pending").length + maintenanceReqs.filter((m: any) => m.status !== "Pending").length },
       { label: "Reports Generated",  value: reports.length },
     ];
 
@@ -1166,7 +1181,7 @@ export function DeptHeadDashboard() {
         <div className="bg-white border border-neutral-200/80 rounded-lg p-6 space-y-4">
           <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">Approval History</h3>
           <div className="relative pl-5 border-l-2 border-neutral-100 space-y-5">
-            {approvalHistory.map((a, i) => (
+            {approvalHistory.map((a: any, i: number) => (
               <div key={i} className="relative">
                 <span className="absolute -left-[25px] top-1 w-2 h-2 bg-white border-2 border-neutral-400 rounded-full" />
                 <p className="text-xs font-semibold text-neutral-900">{a.action}</p>
@@ -1344,3 +1359,5 @@ export function DeptHeadDashboard() {
     </div>
   );
 }
+
+
