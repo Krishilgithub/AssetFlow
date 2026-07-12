@@ -13,6 +13,7 @@ export const createAssetSchema = z.object({
   purchaseDate: z.string().optional(),
   supplier: z.string().optional(),
   notes: z.string().optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   categoryId: z.string().regex(uuidRegex, "Invalid UUID format"),
   departmentId: z.string().regex(uuidRegex, "Invalid UUID format"),
   locationId: z.string().regex(uuidRegex, "Invalid UUID format").optional(),
@@ -96,6 +97,7 @@ export class AssetService {
         department_id: data.departmentId,
         location_id: locationId,
         status: 'Available',
+        custom_fields: data.customFields || undefined,
         created_by: currentUserId || undefined,
       }
     });

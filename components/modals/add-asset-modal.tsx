@@ -39,6 +39,7 @@ export function AddAssetModal({ isOpen, onClose, onSuccess }: AddAssetModalProps
     notes: "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
   const queryClient = useQueryClient();
 
@@ -82,6 +83,7 @@ export function AddAssetModal({ isOpen, onClose, onSuccess }: AddAssetModalProps
       if (form.purchaseCost) payload.purchaseCost = parseFloat(form.purchaseCost);
       if (form.purchaseDate) payload.purchaseDate = form.purchaseDate;
       if (form.notes) payload.notes = form.notes;
+      if (Object.keys(customFieldValues).length > 0) payload.customFields = customFieldValues;
 
       const res = await fetch("/api/assets", {
         method: "POST",
@@ -104,6 +106,7 @@ export function AddAssetModal({ isOpen, onClose, onSuccess }: AddAssetModalProps
       queryClient.invalidateQueries({ queryKey: ["dashboard", "kpis"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard", "charts"] });
       setForm({ name: "", assetTag: "", serialNumber: "", categoryId: "", departmentId: "", locationId: "", purchaseCost: "", purchaseDate: "", notes: "" });
+      setCustomFieldValues({});
       setError(null);
       onSuccess?.();
       onClose();
@@ -281,6 +284,63 @@ export function AddAssetModal({ isOpen, onClose, onSuccess }: AddAssetModalProps
               />
             </div>
           </div>
+
+          {/* Dynamic Category-Specific Fields */}
+          {(() => {
+            const selectedCategory = categories.find((c: any) => c.id === form.categoryId);
+            const schemaFields: Array<{ name: string; label: string; type: string; required: boolean }> = selectedCategory?.schema_definition || [];
+            if (schemaFields.length === 0) return null;
+            return (
+              <div className="space-y-2 border-t border-neutral-100 pt-4">
+                <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider">{selectedCategory?.name} — Category Fields</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {schemaFields.map((f) => {
+                    const value = customFieldValues[f.name] ?? '';
+                    const onChange = (val: any) => setCustomFieldValues(p => ({ ...p, [f.name]: val }));
+                    return (
+                      <div key={f.name} className="space-y-1.5">
+                        <Label className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                          {f.label} {f.required && <span className="text-red-500">*</span>}
+                        </Label>
+                        {f.type === 'textarea' ? (
+                          <textarea
+                            rows={2}
+                            value={value}
+                            onChange={e => onChange(e.target.value)}
+                            placeholder={`Enter ${f.label.toLowerCase()}`}
+                            required={f.required}
+                            disabled={mutation.isPending}
+                            className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all resize-none"
+                          />
+                        ) : f.type === 'boolean' ? (
+                          <div className="flex items-center gap-2 mt-2">
+                            <input
+                              type="checkbox"
+                              checked={!!value}
+                              onChange={e => onChange(e.target.checked)}
+                              disabled={mutation.isPending}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-xs text-neutral-600">Yes</span>
+                          </div>
+                        ) : (
+                          <Input
+                            type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                            value={value}
+                            onChange={e => onChange(e.target.value)}
+                            placeholder={`Enter ${f.label.toLowerCase()}`}
+                            required={f.required}
+                            disabled={mutation.isPending}
+                            className="text-sm"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {error && (
             <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 font-medium">

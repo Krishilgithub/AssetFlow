@@ -45,21 +45,20 @@ export async function POST(request: Request) {
 
     // Send the email with the raw token (not the hash)
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-    
-    await EmailService.sendEmail({
-      to: email,
-      subject: 'Password Reset Request',
-      text: `Hello ${user.first_name},\n\nYou requested a password reset. Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`,
-      html: `
-        <div style="font-family: sans-serif; padding: 20px;">
-          <h2>Password Reset Request</h2>
-          <p>Hello ${user.first_name},</p>
-          <p>You requested a password reset. Click the button below to reset your password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 5px;">Reset Password</a>
-          <p style="margin-top: 20px; color: #666;">If you did not request this, please ignore this email.</p>
+
+    const resetHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Password Reset Request</h2>
+        <p style="color: #555; font-size: 16px;">Hello ${user.first_name},</p>
+        <p style="color: #555; font-size: 16px;">You requested a password reset. Click the button below to reset your password. This link is valid for 1 hour.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="display: inline-block; padding: 15px 30px; font-size: 16px; font-weight: bold; color: #fff; background-color: #000; border-radius: 8px; text-decoration: none;">Reset Password</a>
         </div>
-      `
-    });
+        <p style="color: #999; font-size: 13px; text-align: center;">If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+
+    await EmailService.sendEmail(email, 'AssetFlow – Password Reset Request', resetHtml);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

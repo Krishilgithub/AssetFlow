@@ -114,7 +114,7 @@ export function AllocateAssetModal({ isOpen, onClose, assetId, assetName, onSucc
       const payload = {
         assetId,
         fromDepartmentId: "00000000-0000-0000-0000-000000000000", // We should ideally get this from the asset
-        toDepartmentId: currentUser?.department_id || "00000000-0000-0000-0000-000000000000",
+        toDepartmentId: "00000000-0000-0000-0000-000000000000",
         requestedById: currentUser?.id || "00000000-0000-0000-0000-000000000001",
         reason: "Requested via conflict resolution during allocation"
       };
