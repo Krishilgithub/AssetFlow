@@ -35,6 +35,9 @@ export class CoreService {
         },
         user_departments: {
           include: { departments: true }
+        },
+        _count: {
+          select: { asset_allocations_asset_allocations_allocated_toTousers: { where: { status: 'Active' } } }
         }
       }
     });
@@ -48,10 +51,11 @@ export class CoreService {
       return {
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
-        initials: `${user.first_name[0]}${user.last_name[0]}`,
+        initials: `${user.first_name[0] || ''}${user.last_name[0] || ''}`,
         email: user.email,
         role,
-        department: primaryDept,
+        dept: primaryDept, // mapped to 'dept' for the frontend
+        allocatedAssetsCount: user._count.asset_allocations_asset_allocations_allocated_toTousers,
         status: user.is_active ? 'Active' : 'Inactive',
         joinDate: user.created_at?.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
       };
@@ -143,7 +147,7 @@ export class CoreService {
     });
   }
 
-  static async createDepartment(data: z.infer<typeof createDepartmentSchema>, currentUserId: string) {
+  static async createDepartment(data: z.infer<typeof createDepartmentSchema>, currentUserId?: string | null) {
     const dept = await prisma.departments.create({
       data: {
         name: data.name,
@@ -165,3 +169,4 @@ export class CoreService {
     return dept;
   }
 }
+

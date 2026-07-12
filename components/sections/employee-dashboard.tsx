@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import axios from "axios";
+import { useMyAssets, useMyBookings, useMyMaintenance, useMyTransfers as useMyTransfersHook, useMyReturns, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -149,26 +151,40 @@ export function EmployeeDashboard() {
 
   // Notification tab
   const [notifTab, setNotifTab] = useState("All");
-  const [myAssets, setMyAssets] = useState<any[]>([]);
+  const { data: myAssetsData, refetch: refetchAssets } = useMyAssets();
+  const myAssets = myAssetsData || [];
+  const setMyAssets = (v: any) => refetchAssets();
 
   // Mock Data arrays cleared to be dynamic later
-  const [bookings, setBookings] = useState<any[]>([]);
+  const { data: bookingsData, refetch: refetchBookings } = useMyBookings();
+  const bookings = bookingsData || [];
+  const setBookings = (v: any) => refetchBookings();
   const [bookingForm, setBookingForm] = useState({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
 
   // ─── Maintenance Requests State ─────────────────────────────────
-  const [maintenanceReqs, setMaintenanceReqs] = useState<any[]>([]);
+  const { data: maintData, refetch: refetchMaint } = useMyMaintenance();
+  const maintenanceReqs = maintData || [];
+  const setMaintenanceReqs = (v: any) => refetchMaint();
   const [maintForm, setMaintForm] = useState({ assetId: "", issueType: "Hardware", priority: "Medium", description: "", notes: "" });
 
   // ─── Transfer Requests State ─────────────────────────────────────
-  const [transferReqs, setTransferReqs] = useState<any[]>([]);
+  const { data: transferData, refetch: refetchTransfer } = useMyTransfersHook();
+  const transferReqs = transferData || [];
+  const setTransferReqs = (v: any) => refetchTransfer();
   const [transferForm, setTransferForm] = useState({ assetId: "", transferTo: "", department: "", reason: "" });
 
   // ─── Return Requests State ────────────────────────────────────────
-  const [returnReqs, setReturnReqs] = useState<any[]>([]);
+  const { data: returnData, refetch: refetchReturn } = useMyReturns();
+  const returnReqs = returnData || [];
+  const setReturnReqs = (v: any) => refetchReturn();
   const [returnForm, setReturnForm] = useState({ assetId: "", reason: "", condition: "Good", notes: "" });
 
   // ─── Notifications State ──────────────────────────────────────────
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { data: notificationsData, refetch: refetchNotifs } = useMyNotifications();
+    const notifications = notificationsData || [];
+    const markReadMut = useMarkNotificationRead();
+    const markAllReadMut = useMarkAllNotificationsRead();
+    const clearNotifsMut = useClearNotifications();
 
   // ─────────────────────────────────────────────────────────────────
   // RENDER HELPERS
@@ -197,8 +213,8 @@ export function EmployeeDashboard() {
           <h3 className="text-sm font-bold text-neutral-900">{confirmModal.title}</h3>
           <p className="text-xs text-neutral-500 font-medium leading-relaxed">{confirmModal.description}</p>
           <div className="flex gap-3 justify-end pt-2">
-            <button onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} className="px-4 py-2 text-xs font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-600">Cancel</button>
-            <button onClick={() => { confirmModal.onConfirm(); setConfirmModal(prev => ({ ...prev, isOpen: false })); }} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg">Confirm</button>
+            <button onClick={() => setConfirmModal((prev: any) => ({ ...prev, isOpen: false }))} className="px-4 py-2 text-xs font-bold border border-neutral-200 hover:bg-neutral-50 rounded-lg text-neutral-600">Cancel</button>
+            <button onClick={() => { confirmModal.onConfirm(); setConfirmModal((prev: any) => ({ ...prev, isOpen: false })); }} className="px-4 py-2 text-xs font-bold bg-neutral-950 hover:bg-neutral-800 text-white rounded-lg">Confirm</button>
           </div>
         </div>
       </div>
@@ -659,7 +675,7 @@ export function EmployeeDashboard() {
       );
       if (overlap) { triggerToast(`Time conflict: ${bookingForm.resource} is already booked in that slot`, "error"); return; }
       const newBkg = { id: `BKG-${100 + bookings.length}`, ...bookingForm, status: "Upcoming" };
-      setBookings(prev => [newBkg, ...prev]);
+      setBookings((prev: any) => [newBkg, ...prev]);
       setBookingForm({ resource: "", date: "", startTime: "", endTime: "", purpose: "" });
       triggerToast(`Booking confirmed for ${newBkg.resource}`, "success");
     };
@@ -741,7 +757,7 @@ export function EmployeeDashboard() {
                       <td className="py-3"><StatusBadge status={bkg.status} /></td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {bkg.status !== "Cancelled" && bkg.status !== "Completed" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel your booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: () => { setBookings(prev => prev.map(b => b.id === bkg.id ? { ...b, status: "Cancelled" } : b)); triggerToast("Booking cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Booking?", description: `Cancel your booking for ${bkg.resource} on ${bkg.date}?`, onConfirm: () => { setBookings((prev: any) => prev.map((b: any) => b.id === bkg.id ? { ...b, status: "Cancelled" } : b)); triggerToast("Booking cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -784,7 +800,7 @@ export function EmployeeDashboard() {
         technician: "Unassigned",
         cost: "—",
       };
-      setMaintenanceReqs(prev => [newReq, ...prev]);
+      setMaintenanceReqs((prev: any) => [newReq, ...prev]);
       setMaintForm({ assetId: "", issueType: "Hardware", priority: "Medium", description: "", notes: "" });
       triggerToast(`Maintenance request ${newReq.id} submitted`, "success");
     };
@@ -887,25 +903,24 @@ export function EmployeeDashboard() {
       { label: "Completed", value: transferReqs.filter(t => t.status === "Completed").length },
     ];
 
-    const handleTransferSubmit = (e: React.FormEvent) => {
+    const handleTransferSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!transferForm.assetId || !transferForm.transferTo) {
         triggerToast("Please fill in all required fields", "error"); return;
       }
-      const asset = myAssets.find(a => a.id === transferForm.assetId);
-      const newReq = {
-        id: `TRF-${100 + transferReqs.length}`,
-        assetId: transferForm.assetId,
-        assetName: asset?.name ?? "Unknown Asset",
-        transferTo: transferForm.transferTo,
-        department: transferForm.department,
-        reason: transferForm.reason,
-        requestDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        status: "Pending",
-      };
-      setTransferReqs(prev => [newReq, ...prev]);
-      setTransferForm({ assetId: "", transferTo: "", department: "", reason: "" });
-      triggerToast(`Transfer request ${newReq.id} submitted`, "success");
+      try {
+        await axios.post('/api/me/transfers', {
+          assetId: transferForm.assetId,
+          transferTo: transferForm.transferTo,
+          departmentId: "00000000-0000-0000-0000-000000000000", // Need actual ID
+          reason: transferForm.reason
+        });
+        setTransferForm({ assetId: "", transferTo: "", department: "", reason: "" });
+        triggerToast(`Transfer request submitted`, "success");
+        refetchTransfer();
+      } catch (err: any) {
+        triggerToast(err.response?.data?.error || err.message, "error");
+      }
     };
 
     return (
@@ -975,7 +990,7 @@ export function EmployeeDashboard() {
                       <td className="py-3"><StatusBadge status={req.status} /></td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {req.status === "Pending" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Transfer Request?", description: `Cancel transfer request for ${req.assetName}?`, onConfirm: () => { setTransferReqs(prev => prev.map(t => t.id === req.id ? { ...t, status: "Rejected" } : t)); triggerToast("Transfer request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Transfer Request?", description: `Cancel transfer request for ${req.assetName}?`, onConfirm: () => { setTransferReqs((prev: any) => prev.map((t: any) => t.id === req.id ? { ...t, status: "Rejected" } : t)); triggerToast("Transfer request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -1000,23 +1015,18 @@ export function EmployeeDashboard() {
       { label: "Rejected",  value: returnReqs.filter(r => r.status === "Rejected").length },
     ];
 
-    const handleReturnSubmit = (e: React.FormEvent) => {
+    const handleReturnSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!returnForm.assetId) { triggerToast("Please select an asset to return", "error"); return; }
-      const asset = myAssets.find(a => a.id === returnForm.assetId);
-      const newReq = {
-        id: `RTN-${100 + returnReqs.length}`,
-        assetId: returnForm.assetId,
-        assetName: asset?.name ?? "Unknown Asset",
-        reason: returnForm.reason,
-        condition: returnForm.condition,
-        requestDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        status: "Pending",
-        approvedBy: "—",
-      };
-      setReturnReqs(prev => [newReq, ...prev]);
-      setReturnForm({ assetId: "", reason: "", condition: "Good", notes: "" });
-      triggerToast(`Return request ${newReq.id} submitted`, "success");
+      try {
+        await axios.post('/api/me/returns', returnForm);
+        setReturnForm({ assetId: "", reason: "", condition: "Good", notes: "" });
+        triggerToast(`Return request submitted`, "success");
+        refetchReturn();
+        refetchAssets();
+      } catch (err: any) {
+        triggerToast(err.response?.data?.error || err.message, "error");
+      }
     };
 
     return (
@@ -1086,7 +1096,7 @@ export function EmployeeDashboard() {
                       <td className="py-3 text-neutral-500">{req.approvedBy}</td>
                       <td className="py-3" onClick={e => e.stopPropagation()}>
                         {req.status === "Pending" && (
-                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Return Request?", description: `Cancel the return request for ${req.assetName}?`, onConfirm: () => { setReturnReqs(prev => prev.map(r => r.id === req.id ? { ...r, status: "Rejected" } : r)); triggerToast("Return request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
+                          <button onClick={() => setConfirmModal({ isOpen: true, title: "Cancel Return Request?", description: `Cancel the return request for ${req.assetName}?`, onConfirm: () => { setReturnReqs((prev: any) => prev.map((r: any) => r.id === req.id ? { ...r, status: "Rejected" } : r)); triggerToast("Return request cancelled", "success"); } })} className="px-2 py-0.5 text-[9px] font-bold border border-neutral-200 hover:bg-neutral-50 rounded text-neutral-600">Cancel</button>
                         )}
                       </td>
                     </TableRow>
@@ -1105,7 +1115,7 @@ export function EmployeeDashboard() {
   // ─────────────────────────────────────────────────────────────────
   const renderNotifications = () => {
     const tabs = ["All", "Assets", "Bookings", "Maintenance", "Transfers", "Returns", "Unread"];
-    const filtered = notifications.filter(n => {
+    const filtered = notifications.filter((n: any) => {
       if (notifTab === "All") return true;
       if (notifTab === "Unread") return !n.read;
       return n.category === notifTab;
@@ -1116,11 +1126,11 @@ export function EmployeeDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-neutral-900">Notifications</h3>
-            <p className="text-xs text-neutral-400 mt-0.5 font-medium">{notifications.filter(n => !n.read).length} unread notifications</p>
+            <p className="text-xs text-neutral-400 mt-0.5 font-medium">{notifications.filter((n: any) => !n.read).length} unread notifications</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); triggerToast("All marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
-            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { setNotifications([]); triggerToast("Notifications cleared", "success"); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
+            <button onClick={() => { markAllReadMut.mutate(undefined, { onSuccess: () => triggerToast("All marked as read", "success") }); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
+            <button onClick={() => setConfirmModal({ isOpen: true, title: "Clear All Notifications?", description: "This will permanently delete all notifications.", onConfirm: () => { clearNotifsMut.mutate(undefined, { onSuccess: () => triggerToast("Notifications cleared", "success") }); } })} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg">Clear All</button>
           </div>
         </div>
 
@@ -1133,7 +1143,7 @@ export function EmployeeDashboard() {
 
         {/* Notification list */}
         <div className="space-y-3">
-          {filtered.map(notif => (
+          {filtered.map((notif: any) => (
             <div key={notif.id} className={`flex items-start justify-between p-4 border border-neutral-100 rounded-xl bg-[#FBFBFB] ${!notif.read ? "border-l-4 border-l-black" : ""}`}>
               <div className="space-y-1 flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1145,8 +1155,8 @@ export function EmployeeDashboard() {
                 <p className="text-[9px] text-neutral-400 font-semibold mt-1">{notif.timestamp}</p>
               </div>
               <div className="flex gap-1.5 ml-3 shrink-0">
-                {!notif.read && <button onClick={() => setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
-                <button onClick={() => setConfirmModal({ isOpen: true, title: "Delete Notification?", description: `Delete "${notif.title}"?`, onConfirm: () => setNotifications(prev => prev.filter(n => n.id !== notif.id)) })} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
+                {!notif.read && <button onClick={() => markReadMut.mutate(notif.id)} className="px-2 py-1 border border-neutral-200 hover:bg-neutral-100 rounded-lg text-[9px] font-bold text-neutral-600">Read</button>}
+                <button onClick={() => setConfirmModal({ isOpen: true, title: "Delete Notification?", description: `Delete "${notif.title}"?`, onConfirm: () => { clearNotifsMut.mutate(); } })} className="px-2 py-1 border border-neutral-200 hover:bg-red-50 hover:border-red-200 hover:text-red-700 rounded-lg text-[9px] font-bold text-neutral-600">Delete</button>
               </div>
             </div>
           ))}
@@ -1389,7 +1399,7 @@ export function EmployeeDashboard() {
               className={`p-2 hover:bg-neutral-100 rounded-lg transition-colors relative ${activeTab === "Notifications" ? "text-neutral-900 bg-neutral-100" : "text-neutral-500"}`}
             >
               <HugeiconsIcon icon={Notification01Icon} size={19} />
-              {notifications.some(n => !n.read) && (
+              {notifications.some((n: any) => !n.read) && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-neutral-900 rounded-full border border-white" />
               )}
             </button>

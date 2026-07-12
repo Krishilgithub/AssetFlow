@@ -133,4 +133,29 @@ export class DashboardService {
       value: dept._count.assets,
     })).sort((a, b) => b.value - a.value).slice(0, 6); // Top 6 departments
   }
+
+  /**
+   * Chart Data: Category Distribution
+   */
+  static async getAssetCategoryData() {
+    const categories = await prisma.asset_categories.findMany({
+      where: { is_deleted: false },
+      select: {
+        name: true,
+        _count: {
+          select: { assets: { where: { is_deleted: false } } }
+        }
+      }
+    });
+
+    const colors = ["#171717", "#404040", "#737373", "#a3a3a3", "#d4d4d4"];
+    return categories
+      .map((cat, i) => ({
+        name: cat.name,
+        value: cat._count.assets,
+        color: colors[i % colors.length]
+      }))
+      .filter(cat => cat.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }
 }

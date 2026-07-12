@@ -6,10 +6,12 @@ export async function GET() {
   try {
     const statusData = await DashboardService.getAssetStatusData();
     const departmentAllocation = await DashboardService.getDepartmentAllocationData();
+    const categoryData = await DashboardService.getAssetCategoryData();
     
     return NextResponse.json({
       statusData,
       departmentAllocation,
+      categoryData,
     });
   } catch (error) {
     console.error('Error fetching Dashboard charts:', error);

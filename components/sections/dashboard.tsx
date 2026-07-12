@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits } from "@/lib/hooks/useDashboard";
+import { useDashboardKPIs, useDashboardActivities, useDashboardCharts, useDepartments, useAssetsList, useEmployees, useAllocations, useTransfers, useAudits, useMyNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useClearNotifications, downloadReport } from "@/lib/hooks/useDashboard";
 import Link from "next/link";
 import { AddDepartmentModal } from "@/components/modals/add-department-modal";
 import { AddAssetModal } from "@/components/modals/add-asset-modal";
@@ -265,6 +265,7 @@ const CustomHeatmap = () => {
 
 export function DashboardSection({ initialRole = "Admin" }: { initialRole?: string }) {
   const { data: kpis } = useDashboardKPIs();
+  const { data: chartsData } = useDashboardCharts();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -272,12 +273,8 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   // Mock State for Departments
   const { data: departmentsData } = useDepartments();
   const departments = departmentsData || [];
-  const setDepartments: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
-
   const { data: employeesData } = useEmployees();
   const employees = employeesData || [];
-  const setEmployees: React.Dispatch<React.SetStateAction<any[]>> = (val) => {};
-
   // Mock State for Categories
   const [categories, setCategories] = useState<any[]>([]);
 
@@ -296,10 +293,17 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const auditsList = auditsData || [];
 
   // Mock State for Pending Approvals
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const pendingApprovals = [
+    ...transfersList.filter((t: any) => t.status === 'Pending').map((t: any) => ({ ...t, type: 'Transfer' })),
+    ...allocationsList.filter((a: any) => a.status === 'Pending Approval').map((a: any) => ({ ...a, type: 'Allocation' }))
+  ];
 
   // Mock State for Notifications list
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { data: notificationsData } = useMyNotifications();
+    const notifications = notificationsData || [];
+    const markReadMut = useMarkNotificationRead();
+    const markAllReadMut = useMarkAllNotificationsRead();
+    const clearNotifsMut = useClearNotifications();
 
   // Role-Based Access Control State
   const [rbacPermissions, setRbacPermissions] = useState<Record<string, Record<string, Record<string, boolean>>>>({
@@ -389,17 +393,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
   const { data: activitiesData } = useDashboardActivities();
   const activityLogs = activitiesData || [];
 
-  const handleApprovalAction = (id: number, action: "Approve" | "Reject") => {
-    setPendingApprovals((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, status: action === "Approve" ? "Approved" : "Rejected" } : req))
-    );
+  const handleApprovalAction = (id: string, action: "Approve" | "Reject") => {
     triggerToast(`Request ${action === "Approve" ? "approved" : "rejected"} successfully`, "success");
   };
 
-  const markNotificationRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((msg) => (msg.id === id ? { ...msg, read: true } : msg))
-    );
+  const markNotificationRead = (id: string) => {
+    markReadMut?.mutate(id);
   };
 
   const generalNavItems = [
@@ -716,12 +715,12 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       {/* Row 1 - KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
         {[
-          { title: "Total Assets", value: "324", sub: "Across all categories", detail: "+12 added this month", icon: PackageIcon },
-          { title: "Active Employees", value: "158", sub: "Assigned gear checkouts", detail: "+3 onboarded recently", icon: UserMultipleIcon },
-          { title: "Departments", value: "6", sub: "Corporate branches", detail: "Active cost centers", icon: Building01Icon },
-          { title: "Pending Audits", value: "2", sub: "Verification checks", detail: "Awaiting physical scans", icon: Audit01Icon },
-          { title: "Active Maintenance", value: kpis?.maintenanceToday ?? "0", sub: "Under service/repair", detail: "1 urgent diagnostic", icon: ToolsIcon },
-          { title: "Available Assets", value: kpis?.availableAssets ?? "0", sub: "Ready in inventory", detail: "35.2% stock level", icon: PackageIcon },
+          { title: "Total Assets", value: kpis?.totalAssets?.toString() ?? "0", sub: "Across all categories", detail: "Active items", icon: PackageIcon },
+          { title: "Active Employees", value: employees.length.toString(), sub: "Assigned gear checkouts", detail: "In directory", icon: UserMultipleIcon },
+          { title: "Departments", value: departments.length.toString(), sub: "Corporate branches", detail: "Active cost centers", icon: Building01Icon },
+          { title: "Pending Audits", value: auditsList.filter((a: any) => a.status === 'Pending').length.toString(), sub: "Verification checks", detail: "Awaiting physical scans", icon: Audit01Icon },
+          { title: "Active Maintenance", value: kpis?.maintenanceToday?.toString() ?? "0", sub: "Under service/repair", detail: "Active", icon: ToolsIcon },
+          { title: "Available Assets", value: kpis?.availableAssets?.toString() ?? "0", sub: "Ready in inventory", detail: "Stock level", icon: PackageIcon },
         ].map((card, i) => (
           <div key={i} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -776,7 +775,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           </div>
           <div className="mt-2">
             <CustomDonutChart
-              data={[
+              data={chartsData?.categoryData && chartsData.categoryData.length > 0 ? chartsData.categoryData : [
                 { name: "IT Hardware", value: 145, color: "#171717" },
                 { name: "AV Equipment", value: 32, color: "#404040" },
                 { name: "Office Furniture", value: 65, color: "#737373" },
@@ -1072,7 +1071,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
                         title: `Deactivate ${dept.name} Department?`,
                         description: `Are you sure you want to suspend allocation privileges and set department ${dept.name} as inactive?`,
                         onConfirm: () => {
-                          setDepartments(prev => prev.map(d => d.id === dept.id ? { ...d, status: "Inactive" } : d));
+                          /* TODO: Add real deactivate API */
                           triggerToast(`${dept.name} deactivated`, "error");
                         }
                       });
@@ -1096,7 +1095,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify workspace user directories, access levels, and checked out hardware</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => triggerToast("CSV Export initiated", "success")} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Export</button>
+          <button onClick={() => { downloadReport('allocations'); triggerToast("Exporting Employees allocations...", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Export</button>
           <button onClick={() => setIsAddEmployeeModalOpen(true)} className="px-3.5 py-1.5 text-xs font-semibold bg-black hover:bg-neutral-800 text-white rounded-lg transition-colors">Add Employee</button>
         </div>
       </div>
@@ -1184,7 +1183,7 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((cat, idx) => (
+        {categories.map((cat: any, idx: number) => (
           <div key={idx} className="bg-white border border-neutral-200/80 rounded-lg p-6 flex flex-col gap-4 justify-between">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -1448,8 +1447,8 @@ export function DashboardSection({ initialRole = "Admin" }: { initialRole?: stri
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Verify system warnings, audit alerts, and employee roll checks</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); triggerToast("All marked as read", "success"); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
-          <button onClick={() => { setNotifications([]); triggerToast("Clear log complete", "error"); }} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors">Clear All</button>
+          <button onClick={() => { markAllReadMut.mutate(undefined, { onSuccess: () => triggerToast("All marked as read", "success") }); }} className="px-3 py-1.5 text-xs font-semibold border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg">Mark All Read</button>
+          <button onClick={() => { clearNotifsMut.mutate(undefined, { onSuccess: () => triggerToast("Clear log complete", "error") }); }} className="px-3.5 py-1.5 text-xs font-bold bg-neutral-950 hover:bg-neutral-900 text-white rounded-lg transition-colors">Clear All</button>
         </div>
       </div>
 
